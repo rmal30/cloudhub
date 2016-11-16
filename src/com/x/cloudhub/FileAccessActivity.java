@@ -40,7 +40,6 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 public class FileAccessActivity extends Activity{
 	 Services s=new Services(this);
 	 int notify_id;

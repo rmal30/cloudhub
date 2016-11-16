@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.os.Bundle;
 public class ProgressActivity extends Activity{
 	static ProgressDialog progress;
+	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		progress.show();
