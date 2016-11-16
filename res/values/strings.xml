@@ -22,6 +22,11 @@
 	<string name="upload">Uploads</string>
 	<string name="download">Downloads</string>
 	
+	<string name="nosort">No sort</string>    
+	<string name="date">Date</string>    
+	<string name="size">Size</string>
+	<string name="name">Name</string>  
+	    
 	<string-array name="other">
 	    <item>@string/ftp</item>
 	    <item>@string/sftp</item>
@@ -30,6 +35,13 @@
 	    <item>@string/nfs</item>
 	</string-array>    
 	
+	<string-array name="sort">
+	    <item>@string/nosort</item>
+	    <item>@string/date</item>  
+	    <item>@string/size</item>
+	    <item>@string/name</item>
+	 </string-array>   
+	    
 	<string-array name="cloud">
     	<item>@string/google</item>
     	<item>@string/microsoft</item>
@@ -79,5 +91,9 @@
 	    <string name="refresh">Refresh</string>
 	    <string name="paste">Paste</string>
 	    <string name="up">Upload here</string>
-	    <string name="black">#000000</string>  
+	    <string name="black">#000000</string>
+	    <string name="search">Search</string>
+	    <string name="sort">Sort by:</string>
+	    <string name="all">Select all:</string>
+	    <string name="wait">Please wait...</string>  
 	</resources>

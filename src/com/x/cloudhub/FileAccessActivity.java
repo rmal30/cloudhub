@@ -33,11 +33,14 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 public class FileAccessActivity extends Activity{
 	 Services s=new Services(this);
 	 int notify_id;
@@ -47,20 +50,31 @@ public class FileAccessActivity extends Activity{
 	 static Long expires;
 	 ArrayList<Services.Item> items;static ItemAdapter item_adapter;TextView URLText;Bundle extras;
 	 Services.Service service; Services.FileIO io;Services.FTPSocket ftpsock;ArrayList<String> children;
-	 
+	 static boolean multiSelect = false;
 	 static Notification notification;
 	 static NotificationManager mNotifyManager;
 	 IntentFilter filter = new IntentFilter();
 	 public class ItemAdapter extends ArrayAdapter<Services.Item> {
 	    public ItemAdapter(Context context, ArrayList<Services.Item> item) {super(context, 0, item);}
-	    public View getView(int position, View convertView, ViewGroup parent) {
+	    public View getView(final int position, View convertView, ViewGroup parent) {
 	    	Services.Item item = getItem(position);    
 	       if (convertView == null) {convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_items_view, parent, false);}
 	       TextView txtName = (TextView) convertView.findViewById(R.id.name);
 	       TextView txtId = (TextView) convertView.findViewById(R.id.id);
 	       TextView txtQuota = (TextView) convertView.findViewById(R.id.quota);
 	       ImageView service = (ImageView) convertView.findViewById(R.id.service);
-	       txtName.setText(item.name);txtId.setText(item.type); txtQuota.setText(utils.bytes_in_h_format(item.size));
+	       CheckBox select = (CheckBox) convertView.findViewById(R.id.checkBox1);
+	       txtName.setText(item.name); txtId.setText(item.type); 
+	       txtQuota.setText(utils.bytes_in_h_format(item.size));
+	       select.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+
+			@Override
+			public void onCheckedChanged(CompoundButton button, boolean isChecked) {
+				getItem(position).selected = isChecked;
+			}  
+	       });
+	       select.setChecked(item.selected);
+	       
 	       int drawable_id = R.drawable.filetype_unknown;
 	       if(item.isFolder){drawable_id = R.drawable.folder;
 	       }else{
@@ -74,23 +88,23 @@ public class FileAccessActivity extends Activity{
 	     super.onCreate(savedInstanceState);
 		  extras = this.getIntent().getExtras();
 		  setContentView(R.layout.file_system);
-		  service_id = extras.getInt("service_id");name = extras.getString("name");
-		  method = extras.getString("method");baseurl = extras.getString("url");
-		  email = extras.getString("email");credentials = extras.getString("credentials");
+		  service_id = extras.getInt("service_id"); name = extras.getString("name");
+		  method = extras.getString("method"); baseurl = extras.getString("url");
+		  email = extras.getString("email"); credentials = extras.getString("credentials");
 		  FileAccessActivity.expires = extras.getLong("expires");
 		  boolean upload=extras.getBoolean("upload");
 		  
 		  children = new ArrayList<String>();
 		  if(upload){
 			  findViewById(R.id.upload).setVisibility(View.VISIBLE);
-			  findViewById(R.id.imageButton1).setVisibility(View.GONE);
+			  findViewById(R.id.addFile).setVisibility(View.GONE);
 		  }
 	        items = new ArrayList<Services.Item>();
 	        parentUrls = new Stack<String>(); parentIds = new Stack<String>();
 	        item_adapter = new ItemAdapter(this,items);
 			 final ListView curitems = (ListView) findViewById(R.id.curitems);
 			 registerForContextMenu(curitems);
-			  URLText= (TextView) findViewById(R.id.URLText);
+			  URLText = (TextView) findViewById(R.id.URLText);
 			  setTitle(name);
 			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);
 			  /*
@@ -99,7 +113,6 @@ public class FileAccessActivity extends Activity{
 	        	ftpsock =  s.new FTPSocket(u.host,8000,username,password,usrInfoText);
 	        }
 	       */
-			  
 	        curitems.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
 	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
 	    			 String chosen_id = items.get(position).id;
@@ -130,11 +143,19 @@ public class FileAccessActivity extends Activity{
 	    			 }
 	    		 }
 	    	 });
+	        
 	        curitems.setAdapter(item_adapter);
 	        currentUrl =  service.getChildUrl(baseurl,service.getPaths(baseurl).root);
 	        current_id = service.getPaths(baseurl).root;
 			list_directory(current_id,true);
 	    }
+	 public void toggle_multi(View view){
+		 multiSelect=!multiSelect;
+		 for(int i=0; i<items.size(); i++){
+			 items.get(i).selected = multiSelect;
+		 }
+		 item_adapter.notifyDataSetChanged();
+	 }
 	 public void btnReload(View view){
 		list_directory(current_id,true);
 	 }
@@ -536,7 +557,7 @@ public class FileAccessActivity extends Activity{
 			item_adapter.notifyDataSetChanged();
 			sprefs.edit().clear();
 			findViewById(R.id.upload).setVisibility(View.GONE);
-			findViewById(R.id.imageButton1).setVisibility(View.VISIBLE);
+			findViewById(R.id.addFile).setVisibility(View.VISIBLE);
 		 }	 
 	 public void onBackPressed() {
 		 startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY)); finish(); 

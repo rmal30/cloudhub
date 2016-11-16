@@ -177,6 +177,7 @@ public class Services extends Activity{
 	}
 	public class Item{
 		String name,id,type,size,modified,created; Boolean isFolder;
+		Boolean selected = false;
 		public Item(){super();}
 		public Item(String name, String id, String type, String size, String modified, String created, Boolean isFolder){
 			super();this.name=name; this.id=id; this.type=type; this.size=size; this.modified = modified; this.created=created; this.isFolder =isFolder;
