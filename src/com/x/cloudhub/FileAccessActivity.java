@@ -147,6 +147,7 @@ public class FileAccessActivity extends Activity{
 	        currentUrl =  service.getChildUrl(baseurl,service.getPaths(baseurl).root);
 	        current_id = service.getPaths(baseurl).root;
 			list_directory(current_id,true);
+			findViewById(R.id.linearLayout4).setVisibility(View.GONE);
 	    }
 	 public void toggle_multi(View view){
 		 multiSelect=!multiSelect;

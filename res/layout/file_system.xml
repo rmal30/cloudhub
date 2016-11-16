@@ -11,12 +11,11 @@
           android:layout_height="match_parent"
           android:text="@string/none"
           android:textAppearance="?android:attr/textAppearanceMedium" />
-
+
       <LinearLayout
           android:id="@+id/LinearLayout01"
-          android:layout_width="wrap_content"
-          android:layout_height="49dp"
-           >
+          android:layout_width="match_parent"
+          android:layout_height="49dp" >
 
           <TextView
               android:id="@+id/textView2"
@@ -32,61 +31,78 @@
               android:onClick="toggle_multi"
               android:text="@string/none" />
 
-          <ImageButton
-              android:id="@+id/addFolder"
+          <LinearLayout
+              android:id="@+id/linearLayout5"
               android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:onClick="add_folder"
-              android:src="@drawable/add_folder" />
+              android:layout_height="match_parent" >
 
-          <ImageButton
-              android:id="@+id/addFile"
-              android:layout_width="wrap_content"
-              android:layout_height="match_parent"
-              android:layout_gravity="center_vertical"
-              android:onClick="uploadFile"
-              android:src="@drawable/add_file" />
+              <ImageButton
+                  android:id="@+id/addFolder"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:onClick="add_folder"
+                  android:src="@drawable/add_folder" />
 
-          <Button
-              android:id="@+id/upload"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:onClick="upload"
-              android:text="@string/up"
-              android:visibility="gone" />
+              <ImageButton
+                  android:id="@+id/addFile"
+                  android:layout_width="wrap_content"
+                  android:layout_height="match_parent"
+                  android:onClick="uploadFile"
+                  android:src="@drawable/add_file" />
 
-          <Button
-              android:id="@+id/Button01"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:layout_weight="1"
-              android:onClick="paste"
-              android:text="@string/paste"
-              android:visibility="gone" />
+              <Button
+                  android:id="@+id/Button01"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:layout_weight="1"
+                  android:onClick="paste"
+                  android:text="@string/paste"
+                  android:visibility="gone" />
 
-          <ImageButton
-              android:id="@+id/ImageButton02"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:src="@android:drawable/ic_delete" />
+              <Button
+                  android:id="@+id/upload"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:onClick="upload"
+                  android:text="@string/up"
+                  android:visibility="gone" />
+
+              <ImageButton
+                  android:id="@+id/ImageButton02"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:src="@android:drawable/ic_delete" />
+          </LinearLayout>
+
       </LinearLayout>
 
       <LinearLayout
           android:id="@+id/linearLayout2"
           android:layout_width="match_parent"
           android:layout_height="49dp" >
-
+
+          <Spinner
+              android:id="@+id/spinner1"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_weight="0.09"
+              android:entries="@array/sort" />
+
           <EditText
               android:id="@+id/editText1"
               android:layout_width="0dp"
               android:layout_height="match_parent"
-              android:layout_weight="1" />
+              android:layout_weight="0.82" >
+
+              <requestFocus />
+          </EditText>
 
           <Button
               android:id="@+id/button1"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:text="@string/search" />
+
       </LinearLayout>
 
       <LinearLayout
@@ -94,13 +110,6 @@
           android:layout_width="match_parent"
            android:layout_height="wrap_content">
 
-          <TextView
-              android:id="@+id/textView1"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:text="@string/sort"
-              android:textAppearance="?android:attr/textAppearanceLarge" />
-          <Spinner android:id="@+id/spinner1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1"/>
 		</LinearLayout>
               <LinearLayout
                   android:id="@+id/linearLayout4"
@@ -110,13 +119,13 @@
                   <ProgressBar android:id="@+id/progressBar1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:indeterminate="true" android:layout_gravity="right"/>
 
               </LinearLayout>
-
+
               <ListView
                   android:id="@+id/curitems"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
-                  android:layout_weight="1"
                   android:visibility="visible" >
+
               </ListView>
 
               <GridView
