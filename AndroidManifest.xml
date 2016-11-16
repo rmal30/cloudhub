@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.x.cloudhub" android:versionCode="1" android:versionName="1.0" >
+    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="14"/>
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"></uses-permission>
+    <application android:icon="@drawable/ic_launcher" android:label="@string/app_name" >
+        <activity android:label="@string/app_name" android:name=".MainActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ChooseServiceActivity" android:label="@string/addservice"></activity>
+        <activity android:name=".DownloadsActivity" android:label="Downloads"></activity>
+        <activity android:name=".SetupActivity" android:label="Setup"></activity>
+        <activity android:name=".ChooseMethodActivity" android:label="Configure Cloud"></activity>
+        <activity android:name=".FileAccessActivity" android:label="File System"></activity>
+        <activity android:name=".DebugActivity" android:label="Debug"></activity>
+        <activity android:name=".UserInfoActivity" android:label="User Info"></activity>
+        <activity android:name=".ProgressActivity" android:label="Progress" android:theme="@android:style/Theme.NoDisplay" android:excludeFromRecents="true" ></activity>
+		<service android:name=".FileIOService" />    
+    </application>
+</manifest>

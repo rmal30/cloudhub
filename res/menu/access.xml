@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/home" android:title="@string/home"></item>
+    <item android:id="@+id/debug" android:title="Debug"></item>
+    <item android:id="@+id/downloads" android:title="@string/download"></item>
+    <item android:id="@+id/options" android:title="Options">
+        <menu>
+            <item android:id="@+id/details"
+                  android:title="View Details" />
+            <item android:id="@+id/rename"
+                  android:title="Rename" />
+            <item android:id="@+id/disconnect"
+                  android:title="Disconnect" />
+        </menu>
+    </item>
+</menu>

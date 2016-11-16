@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CloudHub</string>
+    <string name="google">Google Drive</string>
+    <string name="microsoft">Microsoft OneDrive</string>
+    <string name="dropbox">Dropbox</string>
+    <string name="box">Box</string>
+    <string name="amazon">Amazon Cloud Drive</string>
+    <string name="ftp">FTP/FTPS</string>
+    <string name="sftp">SFTP(SSH)</string>
+    <string name="nfs">NFS</string>
+    <string name="smb">SMB</string>
+	<string name="webdav">WebDAV</string>
+    <string name="API">API via OAuth2</string>
+	
+	<string name="addservice">Add Service</string>
+	<string name="usrname">Username:</string>
+	<string name="pwdname">Password:</string>
+	<string name="cust_id">CID:</string>
+	<string name="url">"URL: "</string>
+	<string name="home">Home</string>
+	<string name="upload">Uploads</string>
+	<string name="download">Downloads</string>
+	
+	<string-array name="other">
+	    <item>@string/ftp</item>
+	    <item>@string/sftp</item>
+	    <item>@string/webdav</item>
+	    <item>@string/smb</item>
+	    <item>@string/nfs</item>
+	</string-array>    
+	
+	<string-array name="cloud">
+    	<item>@string/google</item>
+    	<item>@string/microsoft</item>
+    	<item>@string/dropbox</item>
+    	<item>@string/box</item>    
+    	<item>@string/amazon</item>
+    </string-array>
+        
+	<string-array name="webdav">
+	    <item>@string/microsoft</item>
+	    <item>@string/box</item>  
+	</string-array>
+	    
+	<string-array name="all">
+	    <item>@string/google</item>
+    	<item>@string/microsoft</item>
+    	<item>@string/dropbox</item>
+    	<item>@string/box</item>    
+    	<item>@string/amazon</item>
+    	<item>@string/ftp</item>
+	    <item>@string/sftp</item>
+	    <item>@string/webdav</item>
+	    <item>@string/smb</item>
+	    <item>@string/nfs</item> 
+	</string-array>
+	
+	    <string name="cont">Continue</string>
+	    <string name="choose_method">Choose a method of accessing the cloud service:</string>
+	    <string name="back">Go Back</string>
+	    <string name="cid">Please enter a cid for WebDAV access. This cid is the last 16 characters of the URL when you sign in via the web interface</string>
+	    <string name="cid_size_error">The cid is incorrect. Please input exactly 16 characters</string>
+	    <string name="webdav_config">WebDAV configuration</string>
+	    <string name="connect">Connect</string>
+	    <string name="none"></string>
+	     
+	        
+	    <string name="google_scopes">https://www.googleapis.com/auth/drive</string>
+	   
+	    <string name="ms_scopes">onedrive.readwrite wl.skydrive wl.offline_access wl.emails</string>
+	    <string name="dropbox_scopes"></string>
+	    <string name="box_scopes"></string>    
+	    <string name="amazon_scopes" formatted="false">clouddrive%3Awrite</string>    
+	    
+	    <string name="prompt_name">Please enter a name to identify this service:</string>
+	    <string name="name_conflict">A service with that name already exists.Please enter another name</string>
+	    <string name="stdauthError">The username or password is incorrect. Please try again.</string>
+	    <string name="refresh">Refresh</string>
+	    <string name="paste">Paste</string>
+	    <string name="up">Upload here</string>
+	    <string name="black">#000000</string>  
+	</resources>

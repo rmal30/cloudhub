@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/scrollView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/baseText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:overScrollMode="always"
+        android:text=""
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+     <TextView
+         android:id="@+id/prompt_name"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_gravity="center"
+         android:overScrollMode="always"
+         android:text="@string/prompt_name"
+         android:textAppearance="?android:attr/textAppearanceLarge" />
+    
+		 <EditText
+		     android:id="@+id/name"
+		     android:layout_width="match_parent"
+		     android:layout_height="wrap_content"
+		     android:layout_gravity="center" />
+
+		 <TextView
+		     android:id="@+id/name_conflict"
+		     android:layout_width="match_parent"
+		     android:layout_height="wrap_content"
+		     android:layout_gravity="center"
+		     android:text="@string/name_conflict"
+		     android:textAppearance="?android:attr/textAppearanceMedium"
+		     android:textColor="#FF7700"
+		     android:visibility="invisible" />
+
+        <Button
+            android:id="@+id/btnDoGetRequest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="btnAccessFileSystem"
+            android:text="Connect" />
+
+         </LinearLayout>
+
+    </ScrollView>

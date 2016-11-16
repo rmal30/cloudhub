@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string name="url_webdav_microsoft">https://d.docs.live.net:443/</string>
+<string name="netPassportURL">http://nexusrdr.passport.com:443/redir.asp</string>
+<string name="url_webdav_box">https://dav.box.com:443/dav</string>
+<string name="url_none"></string> 
+
+<string name="url_oauth_google_1">https://accounts.google.com:443/o/oauth2/v2/auth</string>
+<string name="url_oauth_google_2">https://www.googleapis.com:443/oauth2/v4/token</string>
+<string name="url_rest_google">https://www.googleapis.com:443/drive/v2/</string>
+
+<string name="url_oauth_ms_1">https://login.live.com:443/oauth20_authorize.srf</string>
+<string name="url_oauth_ms_2">https://login.live.com:443/oauth20_token.srf</string>
+<string name="url_rest_ms"> https://api.onedrive.com:443/v1.0/drive/</string>
+
+<string name="url_oauth_dropbox_1">https://www.dropbox.com:443/1/oauth2/authorize</string>
+<string name="url_oauth_dropbox_2">https://api.dropboxapi.com:443/1/oauth2/token</string>
+<string name="url_rest_dropbox">https://api.dropboxapi.com:443/1/</string>
+
+<string name="url_oauth_box_1">https://app.box.com:443/api/oauth2/authorize</string>
+<string name="url_oauth_box_2">https://app.box.com:443/api/oauth2/token</string>
+<string name="url_rest_box"> https://api.box.com:443/2.0/</string>
+
+<string name="url_oauth_amazon_1">https://www.amazon.com:443/ap/oa</string>
+<string name="url_oauth_amazon_2">https://api.amazon.com:443/auth/o2/token</string>
+<string name="url_rest_amazon"> https://drive.amazonaws.com:443/drive/v1/</string> 
+ 
+</resources>

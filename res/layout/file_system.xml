@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      android:id="@+id/LinearLayout1"
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      android:gravity="top"
+      android:orientation="vertical" >
+
+<TextView
+    android:id="@+id/URLText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/none"
+    android:textAppearance="?android:attr/textAppearanceMedium" />
+
+<LinearLayout
+    android:id="@+id/linearLayout2"
+    android:layout_width="match_parent"
+    android:layout_height="49dp" >
+
+    <ImageButton
+        android:id="@+id/imageButton3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="add_folder"
+        android:src="@drawable/add_folder" />
+
+    <ImageButton
+        android:id="@+id/imageButton1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical"
+        android:onClick="uploadFile"
+        android:src="@drawable/add_file" />
+
+    <Button
+        android:id="@+id/upload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="upload"
+        android:text="@string/up"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:onClick="paste"
+        android:text="@string/paste"
+        android:visibility="gone" />
+
+</LinearLayout>
+
+<ListView
+    android:id="@+id/curitems"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+</ListView>
+
+</LinearLayout>
