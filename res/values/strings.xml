@@ -94,6 +94,9 @@
 	    <string name="black">#000000</string>
 	    <string name="search">Search</string>
 	    <string name="sort">Sort by:</string>
-	    <string name="all">Select all:</string>
-	    <string name="wait">Please wait...</string>  
+	    <string name="all">Select all</string>
+	    <string name="wait">Please wait...</string>
+	    <string name="copy">Copy</string>
+	    <string name="deselect">Deselect all</string>
+	    <string name="move">Move</string>  
 	</resources>

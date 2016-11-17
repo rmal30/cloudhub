@@ -1353,6 +1353,9 @@ public class Services extends Activity{
 				return 1;
 			}
 		}
+		public ArrayList<String> search_children(String dirId, String keyword) {
+			return new ArrayList<String>();
+		}
 	}
 	public class Path{
 		String drive, child, root;
@@ -1465,7 +1468,7 @@ public class Services extends Activity{
 		            }	
 		        } 
 		    });
-		    final AlertDialog alert = builder.create(); //don't show dialog yet
+		    final AlertDialog alert = builder.create();
 		    alert.setOnShowListener(new OnShowListener() {       
 		        @Override
 		        public void onShow(DialogInterface dialog) {       

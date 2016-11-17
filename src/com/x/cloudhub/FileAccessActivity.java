@@ -32,10 +32,11 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -53,11 +54,26 @@ public class FileAccessActivity extends Activity{
 	 static Notification notification;
 	 static NotificationManager mNotifyManager;
 	 IntentFilter filter = new IntentFilter();
-	 public class ItemAdapter extends ArrayAdapter<Services.Item> {
-	    public ItemAdapter(Context context, ArrayList<Services.Item> item) {super(context, 0, item);}
+	 public class ItemAdapter extends BaseAdapter {
+		 private ArrayList<Services.Item> internal_items;
+	    public ItemAdapter(Context context, ArrayList<Services.Item> items) {
+	    	this.internal_items = items;
+	    }
+
+		@Override
+		public Services.Item getItem(int arg0) {
+			return this.internal_items.get(arg0);
+		}
+
+		@Override
+		public long getItemId(int arg0) {
+			// TODO Auto-generated method stub
+			return arg0;
+		}
+
 	    public View getView(final int position, View convertView, ViewGroup parent) {
 	    	Services.Item item = getItem(position);    
-	       if (convertView == null) {convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_items_view, parent, false);}
+	       if (convertView == null) {convertView = LayoutInflater.from(FileAccessActivity.this).inflate(R.layout.list_items_view, parent, false);}
 	       TextView txtName = (TextView) convertView.findViewById(R.id.name);
 	       TextView txtId = (TextView) convertView.findViewById(R.id.id);
 	       TextView txtQuota = (TextView) convertView.findViewById(R.id.quota);
@@ -70,6 +86,13 @@ public class FileAccessActivity extends Activity{
 			@Override
 			public void onCheckedChanged(CompoundButton button, boolean isChecked) {
 				getItem(position).selected = isChecked;
+				if(anySelected(items)){
+					findViewById(R.id.actions).setVisibility(View.VISIBLE);
+					findViewById(R.id.default1).setVisibility(View.GONE);
+				}else{
+					findViewById(R.id.actions).setVisibility(View.GONE);
+					findViewById(R.id.default1).setVisibility(View.VISIBLE);
+				}
 			}  
 	       });
 	       select.setChecked(item.selected);
@@ -82,7 +105,12 @@ public class FileAccessActivity extends Activity{
 	       service.setImageDrawable(getResources().getDrawable(drawable_id));
 	       return convertView;
 	   }
-	}
+		@Override
+		public int getCount() {
+			// TODO Auto-generated method stub
+			return items.size();
+		}
+	 }
 	 public void onCreate(Bundle savedInstanceState) {
 	     super.onCreate(savedInstanceState);
 		  extras = this.getIntent().getExtras();
@@ -102,7 +130,9 @@ public class FileAccessActivity extends Activity{
 	        parentUrls = new Stack<String>(); parentIds = new Stack<String>();
 	        item_adapter = new ItemAdapter(this,items);
 			 final ListView curitems = (ListView) findViewById(R.id.curitems);
+			 final GridView curitems2 = (GridView) findViewById(R.id.curitems2);
 			 registerForContextMenu(curitems);
+			 registerForContextMenu(curitems2);
 			  URLText = (TextView) findViewById(R.id.URLText);
 			  setTitle(name);
 			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);
@@ -111,65 +141,109 @@ public class FileAccessActivity extends Activity{
 	        	 URL u = s.new URL(baseurl);
 	        	ftpsock =  s.new FTPSocket(u.host,8000,username,password,usrInfoText);
 	        }
-	       */
+	       */		  
 	        curitems.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
 	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
-	    			 String chosen_id = items.get(position).id;
-	    			 if(chosen_id.equals("..")){
-	    				 currentUrl=parentUrls.pop();
-	    				 current_id = parentIds.pop();
-	    				 list_directory(current_id,true);
-	    			 }else{
-	    				 if(items.get(position).isFolder){
-	    					 parentUrls.add(currentUrl);
-	    					 parentIds.add(current_id);
-	    					 currentUrl = service.getChildUrl(baseurl, chosen_id);
-	    					 current_id = chosen_id;
-	    					 list_directory(current_id,true);
-	    				 }else{
-	    					 String info = utils.getItemDetails(items, position);
-	    				        new AlertDialog.Builder(FileAccessActivity.this)
-	    				        .setTitle(items.get(position).name).setMessage(info)
-	    				        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-	    				            public void onClick(DialogInterface dialog, int which){}})
-	    				        .setNegativeButton("Download File", new DialogInterface.OnClickListener() {
-	    				            public void onClick(DialogInterface dialog, int which){
-	    				            	downloadItem(position);
-	    				            }})
-	    				        .setIcon(android.R.drawable.ic_dialog_info)
-	    				        .show();
-	    				 }
-	    			 }
+	    			itemClicked(position);
+	    		 }
+	    	 });
+	        
+	        curitems2.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
+	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
+	    			itemClicked(position);
 	    		 }
 	    	 });
 	        
 	        curitems.setAdapter(item_adapter);
+	        curitems2.setAdapter(item_adapter);
 	        currentUrl =  service.getChildUrl(baseurl,service.getPaths(baseurl).root);
 	        current_id = service.getPaths(baseurl).root;
-			list_directory(current_id,true);
-			findViewById(R.id.linearLayout4).setVisibility(View.GONE);
+			listDirectory(current_id,true);
+			
 	    }
-	 public void toggle_multi(View view){
-		 multiSelect=!multiSelect;
+	 public void back(View view){
+		 currentUrl=parentUrls.pop();
+		 current_id = parentIds.pop();
+		 listDirectory(current_id,true);
+		 if(parentIds.size()==0){
+			 findViewById(R.id.back).setVisibility(View.GONE);
+		 }
+	 }
+	 public void itemClicked(final int position){
+		 if(!anySelected(items)){
+		  String chosen_id = items.get(position).id;
+		 	if(items.get(position).isFolder){
+				 parentUrls.add(currentUrl);
+				 parentIds.add(current_id);
+				 currentUrl = service.getChildUrl(baseurl, chosen_id);
+				 current_id = chosen_id;
+				 listDirectory(current_id,true);
+				 findViewById(R.id.back).setVisibility(View.VISIBLE);
+			 }else{
+				 String info = utils.getItemDetails(items, position);
+			        new AlertDialog.Builder(FileAccessActivity.this)
+			        .setTitle(items.get(position).name).setMessage(info)
+			        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+			            public void onClick(DialogInterface dialog, int which){}})
+			        .setNegativeButton("Download File", new DialogInterface.OnClickListener() {
+			            public void onClick(DialogInterface dialog, int which){
+			            	downloadItem(position);
+			            }})
+			        .setIcon(android.R.drawable.ic_dialog_info)
+			        .show();
+			 }
+		 }
+	}
+	 
+	 public void deselect(View view){
+		 multiSelect=false;
 		 for(int i=0; i<items.size(); i++){
 			 items.get(i).selected = multiSelect;
 		 }
+		 findViewById(R.id.actions).setVisibility(View.GONE);
+		 findViewById(R.id.default1).setVisibility(View.VISIBLE);
 		 item_adapter.notifyDataSetChanged();
 	 }
 	 public void btnReload(View view){
-		list_directory(current_id,true);
+		listDirectory(current_id,true);
 	 }
-	 public void list_directory(String dir_id, boolean includeFiles){
+	 public void listDirectory(final String dir_id, final boolean includeFiles){
 		 items.clear();
 		 URLText.setText(service.getChildUrl(baseurl, dir_id));
-		 children = s.new FileIO(method, service_id,baseurl,credentials).list_children(dir_id);
-		 if(parentUrls.size()>0){items.add(s.new Item("..","..","","","","",true));}
+		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
+		 Thread t = new Thread(){
+			 public void run(){
+			 children = s.new FileIO(method, service_id,baseurl,credentials).list_children(dir_id);
+			 runOnUiThread(new Runnable() {
+                 @Override
+                 public void run() {
+                	 for(int i=0; i<children.size(); i++){
+        				 Services.Item item=s.new Item(method, service_id,children.get(i));
+        				 if(includeFiles || item.isFolder){items.add(item);}
+        			 }
+                	 findViewById(R.id.linearLayout4).setVisibility(View.GONE);
+                	 item_adapter.notifyDataSetChanged();
+                 }});
+			 
+			 }
+		 };
+		 t.start();
+		 
+		
+		 
+	 }
+	 
+	 public void searchChildren(String dir_id, String keyword){
+		 items.clear();
+		 URLText.setText(service.getChildUrl(baseurl, dir_id));
+		 children = s.new FileIO(method, service_id,baseurl,credentials).search_children(dir_id, keyword);
 		 for(int i=0; i<children.size(); i++){
 			 Services.Item item=s.new Item(method, service_id,children.get(i));
-			 if(includeFiles || item.isFolder){items.add(item);}
+			 items.add(item);
 		 }
 		 item_adapter.notifyDataSetChanged();
-	 } 
+	 }
+	 
 	 public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) {  
 	    	super.onCreateContextMenu(menu, v, menuInfo);  
 	    	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
@@ -411,7 +485,17 @@ public class FileAccessActivity extends Activity{
 	  	        	default: return super.onOptionsItemSelected(item);
 	    	}
 	    }
-	 public void add_folder(View v){
+	 
+	 public void selectAll(View view){
+		 multiSelect=true;
+		 for(int i=0; i<items.size(); i++){
+			 items.get(i).selected = multiSelect;
+		 }
+		 findViewById(R.id.actions).setVisibility(View.VISIBLE);
+		 findViewById(R.id.default1).setVisibility(View.GONE);
+		 item_adapter.notifyDataSetChanged();
+	 }
+	 public void addFolder(View v){
 		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	        builder.setTitle("Enter a name for the new folder: ");
 	        final EditText input = new EditText(this);
@@ -422,7 +506,7 @@ public class FileAccessActivity extends Activity{
 	            public void onClick(DialogInterface dialog, int which) {
 	         	  String name = input.getText().toString();
 	         	  String status =io.mkdir(current_id, name);
-	         	 list_directory(current_id,true);
+	         	 listDirectory(current_id,true);
 	         	 Toast.makeText(FileAccessActivity.this, status.split("\r\n")[0], 2000).show();
 	         	  }
 	        });
@@ -432,6 +516,73 @@ public class FileAccessActivity extends Activity{
 	        });
 	        builder.show();
 	 }	 
+	 public void showUploadDialog(View v){
+		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 String[] options = {"Take photo", "Gallery", "New text file", "Choose file"};
+		 builder.setItems(options, new DialogInterface.OnClickListener() {
+		        public void onClick(DialogInterface dialog, final int option) {
+		        	switch(option){
+		        		case 0: break;
+		        		case 1: break;
+		        		case 2: break;
+		        		case 3: uploadFile(null);break;
+		        	}
+		        }	
+		    });
+		 final AlertDialog alert = builder.create();
+		 alert.show();
+	 }
+	 public void showSortDialog(View v){
+		 //AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 
+	 }
+	 public void showFilterDialog(View v){
+		 
+		 
+	 }
+	 public void showBookmarks(View v){
+		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 String[] options = {"Root folder", "Trash folder", "Shared folder","Custom bookmarks"};
+		 builder.setItems(options, new DialogInterface.OnClickListener() {
+		        public void onClick(DialogInterface dialog, final int option) {
+		        	switch(option){
+		        		case 0: 
+		        			 currentUrl = service.getChildUrl(baseurl,service.getPaths(baseurl).root);
+		        			 current_id = service.getPaths(baseurl).root;
+		        			 parentUrls.clear(); parentIds.clear();
+		        			 listDirectory(current_id,true);
+		        			 findViewById(R.id.back).setVisibility(View.GONE);
+		        			break;
+		        		case 1: break;
+		        		case 2: break;
+		        		case 3: break;
+		        	}
+		        }	
+		    });
+		 final AlertDialog alert = builder.create();
+		 alert.show();
+		 
+	 }
+	 public void showSearchDialog(View v){
+		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+	        builder.setTitle("Enter a search query: ");
+	        final EditText input = new EditText(this);
+	        input.setInputType(InputType.TYPE_CLASS_TEXT);
+	        builder.setView(input);
+	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) {
+	         	  String name = input.getText().toString();
+	         	  searchChildren(current_id,name);
+	         	  }
+	        });
+	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+	        });
+	        builder.show(); 
+	 }
+
 	 public void paste(View v){
 		SharedPreferences sprefs =  this.getSharedPreferences("com.x.cloudhub.clipboard", Context.MODE_PRIVATE);
 		 final boolean isFolder = sprefs.getBoolean("isFolder",false);
@@ -490,7 +641,7 @@ public class FileAccessActivity extends Activity{
 		 }
 		 dialog.dismiss();
 		 ProgressActivity.progress.dismiss();
-		 runOnUiThread(new Runnable(){public void run(){list_directory(current_id,true);}});
+		 runOnUiThread(new Runnable(){public void run(){listDirectory(current_id,true);}});
 		}
 		};
 		mThread.start();
@@ -499,6 +650,7 @@ public class FileAccessActivity extends Activity{
 		 sprefs.edit().clear();
 		 findViewById(R.id.button1).setVisibility(View.INVISIBLE);
 	 }
+	 
 	 public void upload(View v){
 		 	notify_id = utils.genRandomNum(10000); 
 			SharedPreferences sprefs = this.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE);
@@ -545,7 +697,7 @@ public class FileAccessActivity extends Activity{
 				    	FileAccessActivity.mNotifyManager.notify(title, 0, upload_done);
 				    	
 				    	runOnUiThread(new Runnable(){public void run(){
-				    		list_directory(current_id,true);
+				    		listDirectory(current_id,true);
 				    		 Toast.makeText(FileAccessActivity.this, a.split("\r\n")[0], 2000).show();
 				    	}});
 				    	}catch(Exception e){
@@ -559,8 +711,17 @@ public class FileAccessActivity extends Activity{
 			findViewById(R.id.upload).setVisibility(View.GONE);
 			findViewById(R.id.addFile).setVisibility(View.VISIBLE);
 		 }	 
+	 public void move(View v){
+		 
+	 }
 	 public void onBackPressed() {
 		 startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY)); finish(); 
+	 }
+	 public boolean anySelected(ArrayList<Services.Item> items){
+		 for(Services.Item item:items){
+			 if(item.selected) return true;
+		 }
+		 return false;
 	 }
 }
 /*
