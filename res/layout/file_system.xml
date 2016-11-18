@@ -31,6 +31,15 @@
               android:layout_height="wrap_content"
               android:background="@drawable/ic_select_all_white_48dp"
               android:onClick="selectAll" />
+
+          <ImageButton
+              android:id="@+id/grid_list"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:background="@drawable/ic_view_module_white_48dp" 
+              android:onClick="toggleView"
+              />
+
           <ImageButton
               android:id="@+id/addFolder"
               android:layout_width="wrap_content"
@@ -48,22 +57,27 @@
               android:layout_width="wrap_content"
               android:layout_height="match_parent"
               android:background="@drawable/ic_sort_white_48dp" 
-              android:onClick="showSortDialog"
-              />
+              android:onClick="showSortDialog" />
+          
           <ImageButton
               android:id="@+id/filter"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:background="@drawable/ic_filter_list_white_48dp" 
-              android:onClick="showFilterDialog"
-              />
+              android:onClick="showFilterDialog" />
+          <ImageButton
+              android:id="@+id/bookmark"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:background="@drawable/ic_bookmark_white_48dp" 
+              android:onClick="bookmark" />
+
           <ImageButton
               android:id="@+id/favorites"
               android:layout_width="wrap_content"
               android:layout_height="match_parent"
               android:background="@drawable/ic_folder_special_white_48dp" 
-              android:onClick="showBookmarks"
-              />
+              android:onClick="showBookmarks"/>
 
           <ImageButton
               android:id="@+id/search"

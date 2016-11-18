@@ -98,5 +98,9 @@
 	    <string name="wait">Please wait...</string>
 	    <string name="copy">Copy</string>
 	    <string name="deselect">Deselect all</string>
-	    <string name="move">Move</string>  
+	    <string name="move">Move</string>
+	    <string name="ascend">Ascending</string>
+	    <string name="descend">Descending</string>
+	    <string name="filter">Filter by:</string>
+	    <string name="to">To</string>  
 	</resources>

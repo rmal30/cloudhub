@@ -1,5 +1,7 @@
 package com.x.cloudhub;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
 import java.util.ArrayList;
@@ -17,10 +19,13 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.InputType;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -39,14 +44,17 @@ import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 public class FileAccessActivity extends Activity{
 	 Services s=new Services(this);
 	 int notify_id;
   	 int service_id; String name,credentials,baseurl="",method="",email; 
-	 Stack<String> parentUrls;Stack<String> parentIds;
-	 Socket ftp_socket; String currentUrl,current_id; 
+	 Stack<String> previousIds;
+	 Socket ftp_socket; 
+	 String current_id; 
 	 static Long expires;
 	 ArrayList<Services.Item> items;static ItemAdapter item_adapter;TextView URLText;Bundle extras;
 	 Services.Service service; Services.FileIO io;Services.FTPSocket ftpsock;ArrayList<String> children;
@@ -55,22 +63,19 @@ public class FileAccessActivity extends Activity{
 	 static NotificationManager mNotifyManager;
 	 IntentFilter filter = new IntentFilter();
 	 public class ItemAdapter extends BaseAdapter {
-		 private ArrayList<Services.Item> internal_items;
+		private ArrayList<Services.Item> internal_items;
 	    public ItemAdapter(Context context, ArrayList<Services.Item> items) {
 	    	this.internal_items = items;
 	    }
-
 		@Override
 		public Services.Item getItem(int arg0) {
 			return this.internal_items.get(arg0);
 		}
-
 		@Override
 		public long getItemId(int arg0) {
 			// TODO Auto-generated method stub
 			return arg0;
 		}
-
 	    public View getView(final int position, View convertView, ViewGroup parent) {
 	    	Services.Item item = getItem(position);    
 	       if (convertView == null) {convertView = LayoutInflater.from(FileAccessActivity.this).inflate(R.layout.list_items_view, parent, false);}
@@ -127,7 +132,7 @@ public class FileAccessActivity extends Activity{
 			  findViewById(R.id.addFile).setVisibility(View.GONE);
 		  }
 	        items = new ArrayList<Services.Item>();
-	        parentUrls = new Stack<String>(); parentIds = new Stack<String>();
+	        previousIds = new Stack<String>();
 	        item_adapter = new ItemAdapter(this,items);
 			 final ListView curitems = (ListView) findViewById(R.id.curitems);
 			 final GridView curitems2 = (GridView) findViewById(R.id.curitems2);
@@ -156,16 +161,14 @@ public class FileAccessActivity extends Activity{
 	        
 	        curitems.setAdapter(item_adapter);
 	        curitems2.setAdapter(item_adapter);
-	        currentUrl =  service.getChildUrl(baseurl,service.getPaths(baseurl).root);
 	        current_id = service.getPaths(baseurl).root;
 			listDirectory(current_id,true);
 			
 	    }
 	 public void back(View view){
-		 currentUrl=parentUrls.pop();
-		 current_id = parentIds.pop();
+		 current_id = previousIds.pop();
 		 listDirectory(current_id,true);
-		 if(parentIds.size()==0){
+		 if(previousIds.size()==0){
 			 findViewById(R.id.back).setVisibility(View.GONE);
 		 }
 	 }
@@ -173,11 +176,8 @@ public class FileAccessActivity extends Activity{
 		 if(!anySelected(items)){
 		  String chosen_id = items.get(position).id;
 		 	if(items.get(position).isFolder){
-				 parentUrls.add(currentUrl);
-				 parentIds.add(current_id);
-				 currentUrl = service.getChildUrl(baseurl, chosen_id);
-				 current_id = chosen_id;
-				 listDirectory(current_id,true);
+		 		previousIds.add(current_id);
+				 current_id = chosen_id; listDirectory(current_id,true);
 				 findViewById(R.id.back).setVisibility(View.VISIBLE);
 			 }else{
 				 String info = utils.getItemDetails(items, position);
@@ -233,15 +233,27 @@ public class FileAccessActivity extends Activity{
 		 
 	 }
 	 
-	 public void searchChildren(String dir_id, String keyword){
+	 public void searchChildren(final String dir_id, final String keyword){
 		 items.clear();
 		 URLText.setText(service.getChildUrl(baseurl, dir_id));
+		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
+		 Thread t = new Thread(){
+			 public void run(){
 		 children = s.new FileIO(method, service_id,baseurl,credentials).search_children(dir_id, keyword);
-		 for(int i=0; i<children.size(); i++){
-			 Services.Item item=s.new Item(method, service_id,children.get(i));
-			 items.add(item);
+		 runOnUiThread(new Runnable() {
+             @Override
+             public void run() {
+            	 for(int i=0; i<children.size(); i++){
+    				 Services.Item item=s.new Item(method, service_id,children.get(i));
+    				items.add(item);
+    			 }
+            	 findViewById(R.id.linearLayout4).setVisibility(View.GONE);
+            	 item_adapter.notifyDataSetChanged();
+             }});
+		 
 		 }
-		 item_adapter.notifyDataSetChanged();
+	 };
+	 t.start();
 	 }
 	 
 	 public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) {  
@@ -387,13 +399,6 @@ public class FileAccessActivity extends Activity{
 	        });
 	        builder.show();
 	     }   
-	 public void uploadFile(View v){
-		 String state = Environment.getExternalStorageState();
-		    if (Environment.MEDIA_MOUNTED.equals(state)) {
-		    	File local_path = Environment.getExternalStorageDirectory();
-		    	s.new FileChooser("upload", method, service_id, baseurl, credentials, current_id).chooseFile(local_path.toURI());
-		    }
-	 }
 	 public void viewDetails(int position){
 	       String info = utils.getItemDetails(items, position);
 	        new AlertDialog.Builder(this)
@@ -432,6 +437,7 @@ public class FileAccessActivity extends Activity{
 	         .show();
 	        
 	    }
+
 	 public boolean onCreateOptionsMenu(Menu menu) {
 	        getMenuInflater().inflate(R.menu.access, menu);
 	        return true;
@@ -485,7 +491,7 @@ public class FileAccessActivity extends Activity{
 	  	        	default: return super.onOptionsItemSelected(item);
 	    	}
 	    }
-	 
+	
 	 public void selectAll(View view){
 		 multiSelect=true;
 		 for(int i=0; i<items.size(); i++){
@@ -494,6 +500,17 @@ public class FileAccessActivity extends Activity{
 		 findViewById(R.id.actions).setVisibility(View.VISIBLE);
 		 findViewById(R.id.default1).setVisibility(View.GONE);
 		 item_adapter.notifyDataSetChanged();
+	 }
+	 public void toggleView(View view){
+		 if(findViewById(R.id.curitems).getVisibility()==View.VISIBLE){
+			 findViewById(R.id.curitems).setVisibility(View.GONE);
+			 findViewById(R.id.curitems2).setVisibility(View.VISIBLE);
+			 findViewById(R.id.grid_list).setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_view_list_white_48dp));
+		 }else{
+			 findViewById(R.id.curitems).setVisibility(View.VISIBLE);
+			 findViewById(R.id.curitems2).setVisibility(View.GONE);
+			 findViewById(R.id.grid_list).setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_view_module_white_48dp));
+		 }
 	 }
 	 public void addFolder(View v){
 		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -518,14 +535,33 @@ public class FileAccessActivity extends Activity{
 	 }	 
 	 public void showUploadDialog(View v){
 		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		 String[] options = {"Take photo", "Gallery", "New text file", "Choose file"};
+		 String[] options = {"Take photo", "Choose from gallery","Choose file/folder", "Choose from app"};
+		 builder.setTitle("Upload options:");
 		 builder.setItems(options, new DialogInterface.OnClickListener() {
 		        public void onClick(DialogInterface dialog, final int option) {
 		        	switch(option){
-		        		case 0: break;
-		        		case 1: break;
-		        		case 2: break;
-		        		case 3: uploadFile(null);break;
+		        		case 0: 
+		        			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+		        		    startActivityForResult(intent, 0);
+		        			break;
+		        		case 1: 
+		        			Intent galleryIntent = new Intent(Intent.ACTION_PICK,
+		        			        android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+		        			startActivityForResult(Intent.createChooser(galleryIntent, "Select File"), 1);
+		        			break;
+		        		
+		        		case 2: 
+		        			String state = Environment.getExternalStorageState();
+		        		    if (Environment.MEDIA_MOUNTED.equals(state)) {
+		        		    	File local_path = Environment.getExternalStorageDirectory();
+		        		    	s.new FileChooser("upload", method, service_id, baseurl, credentials, current_id).chooseFile(local_path.toURI());
+		        		    }
+		        			break;
+		        		case 3:
+		        			Intent intent2 = new Intent(Intent.ACTION_GET_CONTENT);
+		        			intent2.setType("*/*").addCategory(Intent.CATEGORY_OPENABLE);
+		        			startActivityForResult(intent2, 2);
+		        		break;
 		        	}
 		        }	
 		    });
@@ -533,31 +569,138 @@ public class FileAccessActivity extends Activity{
 		 alert.show();
 	 }
 	 public void showSortDialog(View v){
-		 //AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 builder.setTitle("Sort options:");
+		 builder.setView(LayoutInflater.from(this).inflate(R.layout.sort_options, null));
+		 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) {
+	            	String type = ((Spinner) ((AlertDialog) dialog).findViewById(R.id.sortType)).getSelectedItem().toString();	
+	            	boolean ascending = ((RadioButton) ((AlertDialog) dialog).findViewById(R.id.ascend)).isChecked();
+	            	sort(current_id, type, ascending);
+	         	}
+
+				
+	        });
+	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+	        });
+		 final AlertDialog alertDialog = builder.create();
+		;
+		 alertDialog.show();
+		 
 		 
 	 }
 	 public void showFilterDialog(View v){
+		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 builder.setTitle("Filter options:");
+		 builder.setView(LayoutInflater.from(this).inflate(R.layout.filter_options, null));
+		 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) {
+	            	//String type = ((Spinner) ((AlertDialog) dialog).findViewById(R.id.sortType)).getSelectedItem().toString();	
+	            	//boolean ascending = ((RadioButton) ((AlertDialog) dialog).findViewById(R.id.ascend)).isChecked();
+	            	//sort(current_id, type, ascending);
+	         	}
+
+				
+	        });
+	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+	        });
+		 final AlertDialog alertDialog = builder.create();
+		;
+		 alertDialog.show();
+		  
 		 
-		 
+	 }
+	 public void bookmark(View v){
+		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+	        builder.setTitle("Enter a name for the new bookmark: ");
+	        final EditText input = new EditText(this);
+	        input.setInputType(InputType.TYPE_CLASS_TEXT);
+	        builder.setView(input);
+	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) {
+	            	SQLiteDatabase myDB = FileAccessActivity.this.openOrCreateDatabase("services.db", MODE_PRIVATE, null);
+	            	myDB.execSQL("CREATE TABLE IF NOT EXISTS BOOKMARKS (SERVICE_NAME TEXT, NAME TEXT, ID TEXT)");
+			    	ContentValues values = new ContentValues();
+			    		values.put("SERVICE_NAME", name);
+			    		values.put("NAME", input.getText().toString());
+			    		values.put("ID", current_id);
+			    	myDB.insert("BOOKMARKS",null,values);
+			    	myDB.close();
+	            	Toast.makeText(FileAccessActivity.this, "Bookmark added", 2000).show();
+	         	  }
+	        });
+	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+	            @Override
+	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+	        });
+	        builder.show();
 	 }
 	 public void showBookmarks(View v){
 		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		 String[] options = {"Root folder", "Trash folder", "Shared folder","Custom bookmarks"};
+		 String[] options = {"Root folder", "Trash folder", "Shared folder","Bookmarks"};
 		 builder.setItems(options, new DialogInterface.OnClickListener() {
 		        public void onClick(DialogInterface dialog, final int option) {
 		        	switch(option){
 		        		case 0: 
-		        			 currentUrl = service.getChildUrl(baseurl,service.getPaths(baseurl).root);
-		        			 current_id = service.getPaths(baseurl).root;
-		        			 parentUrls.clear(); parentIds.clear();
-		        			 listDirectory(current_id,true);
-		        			 findViewById(R.id.back).setVisibility(View.GONE);
+		        			previousIds.add(current_id);
+		        			current_id = service.getPaths(baseurl).root;
+		        			listDirectory(current_id,true);
 		        			break;
-		        		case 1: break;
-		        		case 2: break;
-		        		case 3: break;
+		        		case 1: 
+		        			previousIds.add(current_id);
+		        			current_id = "#trash";
+		        			listDirectory(current_id, true);
+		        			break;
+		        		case 2: 
+		        			previousIds.add(current_id);
+		        			current_id = "#shared";
+		        			listDirectory(current_id, true);
+		        			break;
+		        		case 3: 
+		        			AlertDialog.Builder builder2 = new AlertDialog.Builder(FileAccessActivity.this);
+		        			final String[][] bookmarks = getBookmarksFromDB();
+		        			if(bookmarks[0].length>0){
+			        			builder2.setTitle("Choose a bookmark:");
+			        			builder2.setItems(bookmarks[0], new DialogInterface.OnClickListener() {
+			        		        public void onClick(DialogInterface dialog, final int option) {
+			        		        	previousIds.add(current_id);
+			        		        	current_id=bookmarks[1][option];
+			        		        	listDirectory(current_id, true);
+			        		        }
+			        		    });
+		        			
+		        			final AlertDialog alert2 = builder2.create();
+		        			alert2.show();
+		        			}else{
+		        				Toast.makeText(FileAccessActivity.this, "You have no bookmarks yet!", 1000).show();
+		        			}
+		        			break;
 		        	}
-		        }	
+		        }
+
+				private String[][] getBookmarksFromDB() {
+					SQLiteDatabase myDB = FileAccessActivity.this.openOrCreateDatabase("services.db", Context.MODE_PRIVATE, null);
+					ArrayList<String> names = new ArrayList<String>(); 
+					ArrayList<String> ids = new ArrayList<String>();
+					Cursor selection = myDB.rawQuery("SELECT NAME, ID FROM BOOKMARKS WHERE SERVICE_NAME = ?", new String[]{name});
+					selection.moveToFirst();
+					while (!selection.isAfterLast()) {  
+					    names.add(selection.getString(0));
+					    ids.add(selection.getString(1));
+					    selection.moveToNext();  
+					}
+					String[][] data = new String[2][];
+					data[0] = names.toArray(new String[0]);
+					data[1] = ids.toArray(new String[0]);
+					return data;
+				}	
 		    });
 		 final AlertDialog alert = builder.create();
 		 alert.show();
@@ -650,7 +793,6 @@ public class FileAccessActivity extends Activity{
 		 sprefs.edit().clear();
 		 findViewById(R.id.button1).setVisibility(View.INVISIBLE);
 	 }
-	 
 	 public void upload(View v){
 		 	notify_id = utils.genRandomNum(10000); 
 			SharedPreferences sprefs = this.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE);
@@ -714,6 +856,11 @@ public class FileAccessActivity extends Activity{
 	 public void move(View v){
 		 
 	 }
+	 
+	 public void sort(String currentId, String type, boolean ascending) {
+		Toast.makeText(this, currentId+" "+type+" "+Boolean.toString(ascending), 1000).show();	
+	 }
+	 
 	 public void onBackPressed() {
 		 startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY)); finish(); 
 	 }
@@ -723,6 +870,61 @@ public class FileAccessActivity extends Activity{
 		 }
 		 return false;
 	 }
+	 @Override
+	 public void onActivityResult(int requestCode, int resultCode, Intent data){
+		 super.onActivityResult(requestCode, resultCode, data);
+		 if(resultCode==RESULT_OK){
+		 if(requestCode == 0){   
+			 String imageFileName = Integer.toString(utils.genRandomNum(100000));
+			 File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+			 try {
+				File image = File.createTempFile(imageFileName, ".jpg",storageDir);
+				FileOutputStream fos = new FileOutputStream(image);
+				((Bitmap)data.getExtras().get("data")).compress(Bitmap.CompressFormat.JPEG, 100, fos);
+				fos.close();
+				uploadFile(image);
+			}catch(IOException e) {
+				e.printStackTrace();
+			}
+ 		 upload(null);
+		 }else if(requestCode==1){
+			 Uri uri = data.getData();
+		        android.database.Cursor cursor = getContentResolver().query(uri,new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+		        cursor.moveToFirst();
+		        int columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+		        String picturePath = cursor.getString(columnIndex);
+		        cursor.close();
+		        System.out.println(picturePath);
+	 	 		uploadFile(new File(picturePath));
+		 }else{
+			 Uri uri = data.getData();		       
+			 try{
+				 String[] proj = { MediaStore.MediaColumns.DATA, };
+			     Cursor cursor = FileAccessActivity.this.getContentResolver().query(uri,  proj, null, null, null);
+			     int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+			     cursor.moveToFirst();
+				 String path = cursor.getString(column_index);
+				 cursor.close();
+				 uploadFile(new File(path));
+			 }catch(Exception err){
+				 String path = uri.getPath();
+				 uploadFile(new File(path));
+			 }
+			 
+		 }
+	 }
+	}
+
+	public void uploadFile(File file){
+		 Editor edit = FileAccessActivity.this.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE).edit();
+	 		edit.clear();
+	 		edit.putBoolean("isFolder",false);
+	 		edit.putString("name", file.getName());
+	 		edit.putString("path", Uri.fromFile(file.getParentFile()).toString()+"/");
+	 		edit.apply();
+	 		upload(null);
+	 		
+	}
 }
 /*
 Empty google trash: 	DELETE  /files/trash	
