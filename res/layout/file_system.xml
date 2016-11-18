@@ -41,17 +41,12 @@
               />
 
           <ImageButton
-              android:id="@+id/addFolder"
-              android:layout_width="wrap_content"
-              android:layout_height="match_parent"
-              android:background="@drawable/ic_create_new_folder_white_48dp"
-              android:onClick="addFolder" />
-          <ImageButton
               android:id="@+id/addFile"
               android:layout_width="wrap_content"
               android:layout_height="match_parent"
-              android:background="@drawable/ic_file_upload_white_48dp"
-              android:onClick="showUploadDialog" />
+              android:background="@drawable/ic_add_white_48dp"
+              android:onClick="showAddDialog" />
+
           <ImageButton
               android:id="@+id/sort"
               android:layout_width="wrap_content"
@@ -65,12 +60,6 @@
               android:layout_height="wrap_content"
               android:background="@drawable/ic_filter_list_white_48dp" 
               android:onClick="showFilterDialog" />
-          <ImageButton
-              android:id="@+id/bookmark"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:background="@drawable/ic_bookmark_white_48dp" 
-              android:onClick="bookmark" />
 
           <ImageButton
               android:id="@+id/favorites"
