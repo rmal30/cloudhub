@@ -52,15 +52,11 @@ public class FileAccessActivity extends Activity{
 	 Services s=new Services(this);
 	 int notify_id;
   	 int service_id; String name,credentials,baseurl="",method="",email; 
-	 Stack<String> previousIds;
-	 Socket ftp_socket; 
-	 String current_id; 
-	 static Long expires;
-	 ArrayList<Services.Item> items;static ItemAdapter item_adapter;TextView URLText;Bundle extras;
-	 Services.Service service; Services.FileIO io;Services.FTPSocket ftpsock;ArrayList<String> children;
-	 static boolean multiSelect = false;
-	 static Notification notification;
-	 static NotificationManager mNotifyManager;
+	 Stack<String> previousIds; Socket ftp_socket; String current_id; Context ctx = FileAccessActivity.this;
+	 static Long expires; ArrayList<Services.Item> items;static ItemAdapter item_adapter;TextView URLText;
+	 Bundle extras; Services.Service service; Services.FileIO io;Services.FTPSocket ftpsock;
+	 ArrayList<String> children;
+	 static Notification notification; static NotificationManager mNotifyManager;
 	 IntentFilter filter = new IntentFilter();
 	 public class ItemAdapter extends BaseAdapter {
 		private ArrayList<Services.Item> internal_items;
@@ -68,17 +64,12 @@ public class FileAccessActivity extends Activity{
 	    	this.internal_items = items;
 	    }
 		@Override
-		public Services.Item getItem(int arg0) {
-			return this.internal_items.get(arg0);
-		}
+		public Services.Item getItem(int arg0) {return this.internal_items.get(arg0);}
 		@Override
-		public long getItemId(int arg0) {
-			// TODO Auto-generated method stub
-			return arg0;
-		}
+		public long getItemId(int arg0) {return arg0;}
 	    public View getView(final int position, View convertView, ViewGroup parent) {
-	    	Services.Item item = getItem(position);    
-	       if (convertView == null) {convertView = LayoutInflater.from(FileAccessActivity.this).inflate(R.layout.list_items_view, parent, false);}
+	       Services.Item item = getItem(position);    
+	       if (convertView == null) {convertView = LayoutInflater.from(ctx).inflate(R.layout.list_items_view, parent, false);}
 	       TextView txtName = (TextView) convertView.findViewById(R.id.name);
 	       TextView txtId = (TextView) convertView.findViewById(R.id.id);
 	       TextView txtQuota = (TextView) convertView.findViewById(R.id.quota);
@@ -111,10 +102,7 @@ public class FileAccessActivity extends Activity{
 	       return convertView;
 	   }
 		@Override
-		public int getCount() {
-			// TODO Auto-generated method stub
-			return items.size();
-		}
+		public int getCount() {return internal_items.size();}
 	 }
 	 public void onCreate(Bundle savedInstanceState) {
 	     super.onCreate(savedInstanceState);
@@ -140,88 +128,69 @@ public class FileAccessActivity extends Activity{
 			 registerForContextMenu(curitems2);
 			  URLText = (TextView) findViewById(R.id.URLText);
 			  setTitle(name);
-			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);
-			  /*
-	        if(service_id==R.string.ftp){
-	        	 URL u = s.new URL(baseurl);
-	        	ftpsock =  s.new FTPSocket(u.host,8000,username,password,usrInfoText);
-	        }
-	       */		  
+			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);  
 	        curitems.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
 	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
 	    			itemClicked(position);
 	    		 }
 	    	 });
-	        
 	        curitems2.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
 	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
 	    			itemClicked(position);
 	    		 }
 	    	 });
-	        
-	        curitems.setAdapter(item_adapter);
-	        curitems2.setAdapter(item_adapter);
+	        curitems.setAdapter(item_adapter); curitems2.setAdapter(item_adapter);
 	        current_id = service.getPaths(baseurl).root;
-			listDirectory(current_id,true);
-			
+	        showFiles(current_id,"Get children",null);
 	    }
-	 public void back(View view){
-		 current_id = previousIds.pop();
-		 if(previousIds.size()>0){
-    		 findViewById(R.id.back).setVisibility(View.VISIBLE);
-    	 }else{
-    		 findViewById(R.id.back).setVisibility(View.GONE);
-    	 }
-		 listDirectory(current_id,true);
-	 }
+	
+
 	 public void itemClicked(final int position){
 		 if(!anySelected(items)){
 		  String chosen_id = items.get(position).id;
 		 	if(items.get(position).isFolder){
 		 		previousIds.add(current_id);
-				 current_id = chosen_id; listDirectory(current_id,true);
+				 current_id = chosen_id; showFiles(current_id,"Get children",null);
 			 }else{
 				 String info = utils.getItemDetails(items, position);
-			        new AlertDialog.Builder(FileAccessActivity.this)
+			        new AlertDialog.Builder(ctx)
 			        .setTitle(items.get(position).name).setMessage(info)
 			        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 			            public void onClick(DialogInterface dialog, int which){}})
 			        .setNegativeButton("Download File", new DialogInterface.OnClickListener() {
-			            public void onClick(DialogInterface dialog, int which){
-			            	downloadItem(position);
-			            }})
+			            public void onClick(DialogInterface dialog, int which){downloadItem(position);}})
 			        .setIcon(android.R.drawable.ic_dialog_info)
 			        .show();
 			 }
 		 }
 	}
-	 
+
 	 public void deselect(View view){
-		 multiSelect=false;
 		 for(int i=0; i<items.size(); i++){
-			 items.get(i).selected = multiSelect;
+			 items.get(i).selected = false;
 		 }
 		 findViewById(R.id.actions).setVisibility(View.GONE);
 		 findViewById(R.id.default1).setVisibility(View.VISIBLE);
 		 item_adapter.notifyDataSetChanged();
 	 }
-	 public void btnReload(View view){
-		listDirectory(current_id,true);
-	 }
-	 public void listDirectory(final String dir_id, final boolean includeFiles){
+ 
+	 public void showFiles(final String dir_id, final String op,final String[] params){
 		 items.clear();
 		 URLText.setText(service.getChildUrl(baseurl, dir_id));
 		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
 		 findViewById(R.id.back).setVisibility(View.GONE);
 		 Thread t = new Thread(){
 			 public void run(){
-			 children = s.new FileIO(method, service_id,baseurl,credentials).list_children(dir_id);
+				 if(op.equals("Get children")){children = io.list_children(dir_id);}				
+				 else if(op.equals("Sort")){children = io.sort(children, params[0], Boolean.parseBoolean(params[1]));}
+				 else if(op.equals("Search")){children = io.search_children(dir_id, params[0]);}
+				 else if(op.equals("Filter")){children = io.filter(dir_id, params[0], params[1], params[2], params[3]);}
 			 runOnUiThread(new Runnable() {
                  @Override
                  public void run() {
                 	 for(int i=0; i<children.size(); i++){
         				 Services.Item item=s.new Item(method, service_id,children.get(i));
-        				 if(includeFiles || item.isFolder){items.add(item);}
+        				 items.add(item);
         			 }
                 	 findViewById(R.id.linearLayout4).setVisibility(View.GONE);
                 	 item_adapter.notifyDataSetChanged();
@@ -232,42 +201,12 @@ public class FileAccessActivity extends Activity{
 			 
 			 }
 		 };
-		 t.start();
-		 
-		
-		 
-	 }
-	 
-	 public void searchChildren(final String dir_id, final String keyword){
-		 items.clear();
-		 URLText.setText(service.getChildUrl(baseurl, dir_id));
-		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
-		 findViewById(R.id.back).setVisibility(View.GONE);
-		 Thread t = new Thread(){
-			 public void run(){
-		 children = s.new FileIO(method, service_id,baseurl,credentials).search_children(dir_id, keyword);
-		 runOnUiThread(new Runnable() {
-             @Override
-             public void run() {
-            	 for(int i=0; i<children.size(); i++){
-    				 Services.Item item=s.new Item(method, service_id,children.get(i));
-    				items.add(item);
-    			 }
-            	 findViewById(R.id.linearLayout4).setVisibility(View.GONE);
-            	 if(previousIds.size()>0){
-            		 findViewById(R.id.back).setVisibility(View.VISIBLE);
-            	 }
-            	 item_adapter.notifyDataSetChanged();
-             }});
-		 
-		 }
-	 };
-	 t.start();
+		 t.start(); 
 	 }
 	 
 	 public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) {  
-	    	super.onCreateContextMenu(menu, v, menuInfo);  
-	    	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+    	super.onCreateContextMenu(menu, v, menuInfo);  
+    	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
 	     menu.setHeaderTitle("Options for " +items.get(info.position).name);
 	     menu.add(0, v.getId(), 0, "Details");
 	     menu.add(0, v.getId(), 0,"Download");
@@ -291,16 +230,17 @@ public class FileAccessActivity extends Activity{
 	        if(item.getTitle()=="Rename"){renameItem(info.position);}
 	        if(item.getTitle()=="Cut"){storeItem(info.position, "move");}
 	        if(item.getTitle()=="Copy"){storeItem(info.position,"copy");}
-	        if(item.getTitle()=="Edit"){editItem(info.position);}
+	        if(item.getTitle()=="View online"){viewItem(info.position);}
 	        if(item.getTitle()=="Delete permanently"){deleteItem(info.position,true);}  
 	        if(item.getTitle()=="Send to Trash"){deleteItem(info.position,false);}  
 	        return true;  
 	    }  
-	 private void editItem(int position) {
+	 
+	 private void viewItem(int position) {
 		String content = children.get(position);
 		String edit_url = utils.getProperty(method, content, "alternateLink");
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
-		alert.setTitle("Edit");
+		alert.setTitle("View");
 		WebView wv1 = new WebView(this) {
 			  @Override
 			  public boolean onCheckIsTextEditor() {
@@ -353,7 +293,6 @@ public class FileAccessActivity extends Activity{
 			    }
 	       };
 	       mThread.start(); 
-	       ProgressActivity.progress.setCancelable(true);
 	       ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
 		 	        @Override
 		 	        public void onClick(DialogInterface dialog, int which) {ProgressActivity.progress.dismiss();}
@@ -372,7 +311,7 @@ public class FileAccessActivity extends Activity{
 		   io.getTotalSize(item.isFolder, item.id, Integer.parseInt(item.size));
 		   ProgressActivity.progress.setIndeterminate(false);
 	 }
-	 private void storeItem(int position, String string) {
+	 private void storeItem(int position, String op) {
 		Services.Item item = items.get(position);
 		Editor edit = this.getSharedPreferences("com.x.cloudhub.clipboard", Context.MODE_PRIVATE).edit();
 		edit.clear();
@@ -380,9 +319,9 @@ public class FileAccessActivity extends Activity{
 		edit.putString("name", item.name);
 		edit.putString("id", item.id);
 		edit.putString("parent_id", current_id);
-		edit.putString("operation", string);
+		edit.putString("operation", op);
 		edit.apply();
-		findViewById(R.id.button1).setVisibility(View.VISIBLE);
+		findViewById(R.id.paste).setVisibility(View.VISIBLE);
 	}
 	 public void renameItem(final int position){
 	    	final Services.Item item = items.get(position);
@@ -433,7 +372,7 @@ public class FileAccessActivity extends Activity{
    		    		 items.remove(position);
    		    		 item_adapter.notifyDataSetChanged();
    		    	 }
-   		    	new AlertDialog.Builder(FileAccessActivity.this)
+   		    	new AlertDialog.Builder(ctx)
 		        .setTitle("Status").setMessage(info)
 		        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {public void onClick(DialogInterface dialog, int which){}})
 		        .setIcon(android.R.drawable.ic_dialog_info)
@@ -490,7 +429,7 @@ public class FileAccessActivity extends Activity{
 	        		        .setTitle("Disconnect service").setMessage("Are you sure you want to disconnect this service?")
 	        		        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
 	        		            public void onClick(DialogInterface dialog, int which) { 
-	        		            	s.new ConfigureAccount().disconnectAccount(name);startActivity(new Intent(FileAccessActivity.this, MainActivity.class)); return;
+	        		            	s.new ConfigureAccount().disconnectAccount(name);startActivity(new Intent(ctx, MainActivity.class)); return;
 	        		            }
 	        		         })
 	        		        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {dialog.cancel();}})
@@ -500,11 +439,19 @@ public class FileAccessActivity extends Activity{
 	  	        	default: return super.onOptionsItemSelected(item);
 	    	}
 	    }
-	
+
+	 public void back(View view){
+		 current_id = previousIds.pop();
+		 if(previousIds.size()>0){
+    		 findViewById(R.id.back).setVisibility(View.VISIBLE);
+    	 }else{
+    		 findViewById(R.id.back).setVisibility(View.GONE);
+    	 }
+		 showFiles(current_id,"List children", null);
+	 }
 	 public void selectAll(View view){
-		 multiSelect=true;
 		 for(int i=0; i<items.size(); i++){
-			 items.get(i).selected = multiSelect;
+			 items.get(i).selected = true;
 		 }
 		 findViewById(R.id.actions).setVisibility(View.VISIBLE);
 		 findViewById(R.id.default1).setVisibility(View.GONE);
@@ -521,27 +468,6 @@ public class FileAccessActivity extends Activity{
 			 findViewById(R.id.grid_list).setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_view_module_white_48dp));
 		 }
 	 }
-	 public void newFolder(){
-		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-	        builder.setTitle("Enter a name for the new folder: ");
-	        final EditText input = new EditText(this);
-	        input.setInputType(InputType.TYPE_CLASS_TEXT);
-	        builder.setView(input);
-	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
-	            @Override
-	            public void onClick(DialogInterface dialog, int which) {
-	         	  String name = input.getText().toString();
-	         	  String status =io.mkdir(current_id, name);
-	         	 listDirectory(current_id,true);
-	         	 Toast.makeText(FileAccessActivity.this, status.split("\r\n")[0], 2000).show();
-	         	  }
-	        });
-	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-	            @Override
-	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
-	        });
-	        builder.show();
-	 }	 
 	 public void showAddDialog(View v){
 		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		 String[] options = {"New folder", "Take photo", "Choose from gallery","Choose file/folder", "Choose from app"};
@@ -550,7 +476,25 @@ public class FileAccessActivity extends Activity{
 		        public void onClick(DialogInterface dialog, final int option) {
 		        	switch(option){
 		        		case 0:
-		        			newFolder();
+		        			 final AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+		        		        builder.setTitle("Enter a name for the new folder: ");
+		        		        final EditText input = new EditText(ctx);
+		        		        input.setInputType(InputType.TYPE_CLASS_TEXT);
+		        		        builder.setView(input);
+		        		        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+		        		            @Override
+		        		            public void onClick(DialogInterface dialog, int which) {
+		        		         	  String name = input.getText().toString();
+		        		         	  String status =io.mkdir(current_id, name);
+		        		         	 showFiles(current_id,"List", null);
+		        		         	 Toast.makeText(ctx, status.split("\r\n")[0], 2000).show();
+		        		         	  }
+		        		        });
+		        		        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		        		            @Override
+		        		            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+		        		        });
+		        		        builder.show();
 		        			break;
 		        		case 1: 
 		        			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -589,12 +533,11 @@ public class FileAccessActivity extends Activity{
 	            public void onClick(DialogInterface dialog, int which) {
 	            	String type = ((Spinner) ((AlertDialog) dialog).findViewById(R.id.sortType)).getSelectedItem().toString();	
 	            	boolean ascending = ((RadioButton) ((AlertDialog) dialog).findViewById(R.id.ascend)).isChecked();
-	            	sort(current_id, type, ascending);
-	            	 previousIds.add(current_id);
-	            	 
+	            	if(!type.equals("No sort")){
+	            		previousIds.add(current_id);
+	            		showFiles(current_id, "Sort",new String[]{type, String.valueOf(ascending)});
+	            	}
 	         	}
-
-				
 	        });
 	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 	            @Override
@@ -631,99 +574,120 @@ public class FileAccessActivity extends Activity{
 		  
 		 
 	 }
-	 public void bookmark(View v){
-		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-	        builder.setTitle("Enter a name for the new bookmark: ");
-	        final EditText input = new EditText(this);
-	        input.setInputType(InputType.TYPE_CLASS_TEXT);
-	        builder.setView(input);
-	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
-	            @Override
-	            public void onClick(DialogInterface dialog, int which) {
-	            	SQLiteDatabase myDB = FileAccessActivity.this.openOrCreateDatabase("services.db", MODE_PRIVATE, null);
-	            	myDB.execSQL("CREATE TABLE IF NOT EXISTS BOOKMARKS (SERVICE_NAME TEXT, NAME TEXT, ID TEXT)");
-			    	ContentValues values = new ContentValues();
-			    		values.put("SERVICE_NAME", name);
-			    		values.put("NAME", input.getText().toString());
-			    		values.put("ID", current_id);
-			    	myDB.insert("BOOKMARKS",null,values);
-			    	myDB.close();
-	            	Toast.makeText(FileAccessActivity.this, "Bookmark added", 2000).show();
-	         	  }
-	        });
-	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-	            @Override
-	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
-	        });
-	        builder.show();
-	 }
 	 public void showBookmarks(View v){
 		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		 final String[][] bookmarks = getBookmarksFromDB();
+		 boolean exists = false;
+		 for(int i=0; i<bookmarks[0].length; i++){
+			 if(bookmarks[1][i].equals(current_id)){exists = true;}
+		 }
 		 String[] options = {"Root folder", "Trash folder", "Shared folder","Existing bookmarks", "Bookmark this folder"};
-		 builder.setItems(options, new DialogInterface.OnClickListener() {
+		 if(exists){
+			 options[4] = "Remove bookmark";
+		 }
+		 final boolean exists2 = exists;
+		 		 builder.setItems(options, new DialogInterface.OnClickListener() {
 		        public void onClick(DialogInterface dialog, final int option) {
 		        	switch(option){
 		        		case 0: 
 		        			previousIds.add(current_id);
 		        			current_id = service.getPaths(baseurl).root;
-		        			listDirectory(current_id,true);
+		        			showFiles(current_id,"List",null);
 		        			break;
 		        		case 1: 
 		        			previousIds.add(current_id);
 		        			current_id = "#trash";
-		        			listDirectory(current_id, true);
+		        			showFiles(current_id, "List", null);
 		        			break;
 		        		case 2: 
 		        			previousIds.add(current_id);
 		        			current_id = "#shared";
-		        			listDirectory(current_id, true);
+		        			showFiles(current_id, "List", null);
 		        			break;
 		        		case 3: 
-		        			AlertDialog.Builder builder2 = new AlertDialog.Builder(FileAccessActivity.this);
-		        			final String[][] bookmarks = getBookmarksFromDB();
+		        			AlertDialog.Builder builder2 = new AlertDialog.Builder(ctx);
+		        			
 		        			if(bookmarks[0].length>0){
 			        			builder2.setTitle("Choose a bookmark:");
 			        			builder2.setItems(bookmarks[0], new DialogInterface.OnClickListener() {
 			        		        public void onClick(DialogInterface dialog, final int option) {
 			        		        	previousIds.add(current_id);
 			        		        	current_id=bookmarks[1][option];
-			        		        	listDirectory(current_id, true);
+			        		        	showFiles(current_id,"List", null);
 			        		        }
 			        		    });
 		        			
 		        			final AlertDialog alert2 = builder2.create();
 		        			alert2.show();
 		        			}else{
-		        				Toast.makeText(FileAccessActivity.this, "You have no bookmarks yet!", 1000).show();
+		        				Toast.makeText(ctx, "You have no bookmarks yet!", 1000).show();
 		        			}
 		        			break;
 		        		case 4:
-		        			bookmark(null);
+		        			final AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+		        			final EditText input;
+		        			if(!exists2){
+		        				builder.setTitle("Enter a name for the new bookmark: ");
+		        				input = new EditText(ctx);
+		        				input.setInputType(InputType.TYPE_CLASS_TEXT);
+		        				builder.setView(input);
+		        			}else{
+		        				input = null;
+		        				builder.setTitle("Delete bookmark");
+		        				builder.setMessage("Are you sure you want to delete this bookmark?");
+		        			}
+		        	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
+		        	            @Override
+		        	            public void onClick(DialogInterface dialog, int which) {
+		        	            	SQLiteDatabase myDB = ctx.openOrCreateDatabase("services.db", MODE_PRIVATE, null);
+		        	            	if(exists2){
+			        	            	myDB.delete("BOOKMARKS", "ID=?", new String[]{current_id});
+			        	            	Toast.makeText(ctx, "Bookmark deleted", 2000).show();
+		        	            	}else{
+			        	            	myDB.execSQL("CREATE TABLE IF NOT EXISTS BOOKMARKS (SERVICE_NAME TEXT, NAME TEXT, ID TEXT)");
+			        	            	ContentValues values = new ContentValues();
+			        			    		values.put("SERVICE_NAME", name);
+			        			    		values.put("NAME", input.getText().toString());
+			        			    		values.put("ID", current_id);
+			        			    	myDB.insert("BOOKMARKS",null,values);
+			        			    	
+			        	            	Toast.makeText(ctx, "Bookmark added", 2000).show();
+			        	            }
+		        	            	myDB.close();
+		        			    	
+		        	         	  }
+		        	        });
+		        	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		        	            @Override
+		        	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
+		        	        });
+		        	        builder.show();
 		        			break;
 		        	}
 		        }
 
-				private String[][] getBookmarksFromDB() {
-					SQLiteDatabase myDB = FileAccessActivity.this.openOrCreateDatabase("services.db", Context.MODE_PRIVATE, null);
-					ArrayList<String> names = new ArrayList<String>(); 
-					ArrayList<String> ids = new ArrayList<String>();
-					Cursor selection = myDB.rawQuery("SELECT NAME, ID FROM BOOKMARKS WHERE SERVICE_NAME = ?", new String[]{name});
-					selection.moveToFirst();
-					while (!selection.isAfterLast()) {  
-					    names.add(selection.getString(0));
-					    ids.add(selection.getString(1));
-					    selection.moveToNext();  
-					}
-					String[][] data = new String[2][];
-					data[0] = names.toArray(new String[0]);
-					data[1] = ids.toArray(new String[0]);
-					return data;
-				}	
-		    });
+		 });		
 		 final AlertDialog alert = builder.create();
-		 alert.show();
-		 
+		 alert.show();	 
 	 }
+		 
+		public String[][] getBookmarksFromDB() {
+				SQLiteDatabase myDB = ctx.openOrCreateDatabase("services.db", Context.MODE_PRIVATE, null);
+				ArrayList<String> names = new ArrayList<String>(); 
+				ArrayList<String> ids = new ArrayList<String>();
+				Cursor selection = myDB.rawQuery("SELECT NAME, ID FROM BOOKMARKS WHERE SERVICE_NAME = ?", new String[]{name});
+				selection.moveToFirst();
+				while (!selection.isAfterLast()) {  
+				    names.add(selection.getString(0));
+				    ids.add(selection.getString(1));
+				    selection.moveToNext();  
+				}
+				String[][] data = new String[2][];
+				data[0] = names.toArray(new String[0]);
+				data[1] = ids.toArray(new String[0]);
+				myDB.close();
+				return data;
+	    }
 	 public void showSearchDialog(View v){
 		 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	        builder.setTitle("Enter a search query: ");
@@ -733,9 +697,9 @@ public class FileAccessActivity extends Activity{
 	        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
 	            @Override
 	            public void onClick(DialogInterface dialog, int which) {
-	         	  String name = input.getText().toString();
+	         	  String keyword = input.getText().toString();
 	         	  previousIds.add(current_id);
-	         	  searchChildren(current_id,name);
+	         	  showFiles(current_id,"Search", new String[]{keyword});
 	         	  }
 	        });
 	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -756,7 +720,7 @@ public class FileAccessActivity extends Activity{
 		if(op.equals("move")){action = "Moving"; }
 		
 		if(op.equals("copy")){action= "Copying"; ProgressActivity.progress=new ProgressDialog(this);}
-		final ProgressDialog dialog = ProgressDialog.show(FileAccessActivity.this, "", action+". Please wait...", true);
+		final ProgressDialog dialog = ProgressDialog.show(ctx, "", action+". Please wait...", true);
 		if(isFolder && op.equals("copy")){
 			ProgressActivity.progress=new ProgressDialog(this);
 			ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
@@ -773,8 +737,8 @@ public class FileAccessActivity extends Activity{
 			FileAccessActivity.mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			FileAccessActivity.notification=new Notification(android.R.drawable.ic_menu_save, "Copying "+item_name, System.currentTimeMillis());
 			FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
-			FileAccessActivity.notification.setLatestEventInfo(FileAccessActivity.this, "Copying "+item_name+"...", "", 
-			PendingIntent.getActivity(FileAccessActivity.this, utils.genRandomNum(100000),new Intent(FileAccessActivity.this,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
+			FileAccessActivity.notification.setLatestEventInfo(ctx, "Copying "+item_name+"...", "", 
+			PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
 			FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
 			dialog.dismiss();
 		}
@@ -795,15 +759,15 @@ public class FileAccessActivity extends Activity{
 		      FileAccessActivity.mNotifyManager.cancel(notify_id);
 		      String title ="Copied "+item_name; 
 		    	Notification copy_done=new Notification(android.R.drawable.ic_menu_save, title, System.currentTimeMillis());
-		    	copy_done.setLatestEventInfo(FileAccessActivity.this, title,"",
-		    	PendingIntent.getActivity(FileAccessActivity.this, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
+		    	copy_done.setLatestEventInfo(ctx, title,"",
+		    	PendingIntent.getActivity(ctx, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
 		    	copy_done.flags |= Notification.FLAG_AUTO_CANCEL; 
 		    	
 		    	FileAccessActivity.mNotifyManager.notify(title, 0, copy_done);
 		 }
 		 dialog.dismiss();
 		 ProgressActivity.progress.dismiss();
-		 runOnUiThread(new Runnable(){public void run(){listDirectory(current_id,true);}});
+		 runOnUiThread(new Runnable(){public void run(){showFiles(current_id,"List", null);}});
 		}
 		};
 		mThread.start();
@@ -834,8 +798,8 @@ public class FileAccessActivity extends Activity{
 			 FileAccessActivity.mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			 FileAccessActivity.notification=new Notification(android.R.drawable.stat_sys_upload, "Uploading "+item_name, System.currentTimeMillis());
 			 FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
-			 FileAccessActivity.notification.setLatestEventInfo(FileAccessActivity.this, "Uploading "+item_name, "", 
-					 PendingIntent.getActivity(FileAccessActivity.this, utils.genRandomNum(100000),new Intent(FileAccessActivity.this,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
+			 FileAccessActivity.notification.setLatestEventInfo(ctx, "Uploading "+item_name, "", 
+					 PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
 			 FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
 		      
 			Thread mThread = new Thread() {
@@ -851,15 +815,15 @@ public class FileAccessActivity extends Activity{
 				    	
 				    	String title ="Uploaded "+item_name; 
 				    	Notification upload_done=new Notification(android.R.drawable.stat_sys_upload_done, title, System.currentTimeMillis());
-				    	upload_done.setLatestEventInfo(FileAccessActivity.this, title,"",
-				    	PendingIntent.getActivity(FileAccessActivity.this, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
+				    	upload_done.setLatestEventInfo(ctx, title,"",
+				    	PendingIntent.getActivity(ctx, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
 				    	upload_done.flags |= Notification.FLAG_AUTO_CANCEL; 
 				    	
 				    	FileAccessActivity.mNotifyManager.notify(title, 0, upload_done);
 				    	
 				    	runOnUiThread(new Runnable(){public void run(){
-				    		listDirectory(current_id,true);
-				    		 Toast.makeText(FileAccessActivity.this, a.split("\r\n")[0], 2000).show();
+				    		showFiles(current_id,"List", null);
+				    		 Toast.makeText(ctx, a.split("\r\n")[0], 2000).show();
 				    	}});
 				    	}catch(Exception e){
 				    		e.printStackTrace();
@@ -872,15 +836,7 @@ public class FileAccessActivity extends Activity{
 			findViewById(R.id.upload).setVisibility(View.GONE);
 			findViewById(R.id.addFile).setVisibility(View.VISIBLE);
 		 }	 
-	 public void move(View v){
-		 
-	 }
-	 
-	 public void sort(String currentId, String type, boolean ascending) {
-		 
-		Toast.makeText(this, currentId+" "+type+" "+Boolean.toString(ascending), 1000).show();	
-	 }
-	 
+
 	 public void onBackPressed() {
 		 startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY)); finish(); 
 	 }
@@ -920,7 +876,7 @@ public class FileAccessActivity extends Activity{
 			 Uri uri = data.getData();		       
 			 try{
 				 String[] proj = { MediaStore.MediaColumns.DATA, };
-			     Cursor cursor = FileAccessActivity.this.getContentResolver().query(uri,  proj, null, null, null);
+			     Cursor cursor = ctx.getContentResolver().query(uri,  proj, null, null, null);
 			     int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
 			     cursor.moveToFirst();
 				 String path = cursor.getString(column_index);
@@ -936,14 +892,13 @@ public class FileAccessActivity extends Activity{
 	}
 
 	public void uploadFile(File file){
-		 Editor edit = FileAccessActivity.this.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE).edit();
+		 Editor edit = ctx.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE).edit();
 	 		edit.clear();
 	 		edit.putBoolean("isFolder",false);
 	 		edit.putString("name", file.getName());
 	 		edit.putString("path", Uri.fromFile(file.getParentFile()).toString()+"/");
 	 		edit.apply();
 	 		upload(null);
-	 		
 	}
 }
 /*

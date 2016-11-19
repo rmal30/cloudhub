@@ -5,9 +5,15 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import org.apache.http.*;
@@ -1356,7 +1362,130 @@ public class Services extends Activity{
 		public ArrayList<String> search_children(String dirId, String keyword) {
 			return new ArrayList<String>();
 		}
+		
+		public ArrayList<String> sort(ArrayList<String> response_arr, String prop, boolean ascending) {
+			Map<String, String> items = new HashMap<String, String>();
+			ArrayList<Long> values = new ArrayList<Long>();
+			ArrayList<String> results = new ArrayList<String>();
+			
+			for(int i=0; i<response_arr.size(); i++){
+				Item item = new Services.Item(method, service_id, response_arr.get(i));				
+				int count = 0; 
+				Long id;
+				if(prop.equals("Size")){id = Long.valueOf(item.size);}
+				else if(prop.equals("Date")){
+					String dateFormat;
+					try {
+						switch(service_id){
+							case R.string.google: dateFormat = "yyyy-MM-dd'T'HH:mm:ss"; break;
+							case R.string.dropbox: dateFormat="EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.box: dateFormat="EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.webdav: dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.microsoft: dateFormat="yyyy-MM-dd'T'HH:mm:ss"; break;
+							default:dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
+						}
+						SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+						Date d = sdf.parse(item.modified);
+						id = Long.valueOf(d.getTime());
+					} catch (ParseException e) {
+						e.printStackTrace();
+						dateFormat="EEE, dd MMM yyyy HH:mm:ss";
+						Date d;
+						try {
+							d = new SimpleDateFormat(dateFormat).parse(item.modified);
+							id = Long.valueOf(d.getTime());
+						} catch (ParseException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+							id = 0L;
+						}	
+					}
+				}
+				else{
+					id = findPosition(item.name, 13);
+				}
+				while(items.containsKey(id+"$"+Integer.toString(count))){
+					count++;
+				}
+				items.put(id+"$"+Integer.toString(count), response_arr.get(i));
+				values.add(id);
+			}
+			ArrayList<Long> sorted_values = merge_sort(values, ascending);
+			for(int i=0; i<sorted_values.size(); i++){
+				int count = 0; 
+				String key;
+				if(i==0 || !sorted_values.get(i).equals(sorted_values.get(i-1))){
+					key = Long.toString(sorted_values.get(i))+"$"+Integer.toString(count);
+					while(items.containsKey(key)){
+						results.add(items.get(key));
+						count++;
+						key = sorted_values.get(i)+"$"+Integer.toString(count);
+					}
+				}
+			}
+			return results;
+		}		
+		private Long findPosition(String name, int maxLength) {
+			Long value = 0L;
+			char[] word = name.toLowerCase().toCharArray();
+			for(int i=0; i<Math.min(name.length(),maxLength); i++){
+				value = value*26;
+				int letterValue = Character.getNumericValue(word[i]) - Character.getNumericValue('a');
+				value+=letterValue;
+			}
+			for(int i=name.length(); i<maxLength; i++){
+				value = value*26;
+			}
+			return value;
+		}
+		public ArrayList<Long> merge_sort(ArrayList<Long> list, boolean ascend){
+			if(list.size()==1){
+				return list;
+			}else{
+				int middle = (int) Math.floor(list.size()/2);
+				ArrayList<Long> first = new ArrayList<Long>(list.subList(0, middle));
+				ArrayList<Long> second = new ArrayList<Long>(list.subList(middle, list.size()));
+				return merge(merge_sort(first,ascend), merge_sort(second, ascend), ascend);
+			}
+		}
+ 		public ArrayList<Long> merge(ArrayList<Long> list1, ArrayList<Long> list2, boolean ascend){
+			ArrayList<Long> merged_list = new ArrayList<Long>();
+			int index1 = 0; int index2 = 0;
+			while(index1<list1.size() && index2<list2.size()){
+				if(ascend){
+					if(list1.get(index1)<list2.get(index2)){
+						merged_list.add(list1.get(index1));
+						index1++;
+					}else{
+						merged_list.add(list2.get(index2));
+						index2++;
+					}
+				
+				}else{
+					if(list2.get(index2)>list1.get(index1)){
+						merged_list.add(list2.get(index2));
+						index2++;
+					}else{
+						merged_list.add(list1.get(index1));
+						index1++;
+					}
+				}
+			}
+			for(int i=index1; i<list1.size(); i++){
+				merged_list.add(list1.get(i));
+			}
+			for(int i=index2; i<list2.size(); i++){
+				merged_list.add(list2.get(i));
+			}
+			return merged_list;
+			
+		}
+		public ArrayList<String> filter(String dirId, String type,
+				String dateCriteria, String sizeCriteria, String nameCriteria) {
+			return null;
+		}
 	}
+ 	
 	public class Path{
 		String drive, child, root;
 		public Path(String drive, String child, String root){
