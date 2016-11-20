@@ -9,11 +9,7 @@ Add FTP access
 
 Syncing offline
 
-Searching files in folders
-
 Filtering files
-
-Viewing shared and deleted files
 
 Overwriting files and folders
 
