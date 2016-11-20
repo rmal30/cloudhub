@@ -11,13 +11,9 @@ Syncing offline
 
 Searching files in folders
 
-Sorting and filtering files
+Filtering files
 
 Viewing shared and deleted files
-
-Creating text documents
-
-Take photos and upload them directly
 
 Overwriting files and folders
 
