@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="fill"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/item_type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SubItem"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textSize="14dp"
+        android:visibility="gone" />
+
+    <RelativeLayout
+        android:id="@+id/RelativeLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="0.70"
+        android:gravity="center" >
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="128dp"
+            android:layout_height="128dp"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/filetype_unknown" />
+
+        <CheckBox
+            android:id="@+id/checkBox1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:focusable="false"
+            android:text="@string/none" />
+
+        <TextView
+            android:id="@+id/item_quota"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:text="Small Text"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:textSize="14dp" />
+
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/item_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_weight="0.30"
+        android:gravity="center"
+        android:lines="2"
+        android:text="ListView"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textSize="15dp" />
+
+</LinearLayout>

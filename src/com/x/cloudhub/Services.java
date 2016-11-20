@@ -25,6 +25,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.json.*;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -120,7 +121,7 @@ public class Services extends Activity{
 		switch(service_id){
 			case R.string.google: return "about";
 			case R.string.microsoft: return "";
-			case R.string.dropbox: return "account/info";
+			case R.string.dropbox: return "users/get_current_account";
 			case R.string.box: return "users/me";
 			//case R.string.amazon: return "account/endpoint";
 		}
@@ -152,7 +153,6 @@ public class Services extends Activity{
 			 HttpEntity resEntity = client.execute(post).getEntity();
 			 String json_str = EntityUtils.toString(resEntity);
 			 String json_str2 = json_str.substring(json_str.indexOf("{"), json_str.lastIndexOf("}") + 1);
-			 System.out.println(json_str2);
 			 JSONObject response = new JSONObject(new String(json_str2));
 			 String access_token = response.getString("access_token");
 			 String refresh_token = credentials.split("&&")[1];
@@ -555,7 +555,11 @@ public class Services extends Activity{
 			}else if(method.equals("OAuth2")){
 			    try {
 			    	OAuth2 o = new OAuth2(service_id);
-					String json_str2 =new HTTPRequest("GET",ctx.getResources().getString(o.getUrl(3))+o.getUserInfoPath(), headers,new byte[0]).getContent(); 
+			    	String httpMethod = "GET";
+			    	if(service_id==R.string.dropbox){
+			    		httpMethod = "POST";
+			    	}
+					String json_str2 =new HTTPRequest(httpMethod,ctx.getResources().getString(o.getUrl(3))+o.getUserInfoPath(), headers,new byte[0]).getContent();
 					json_str2 = json_str2.substring(json_str2.indexOf("{"), json_str2.lastIndexOf("}") + 1);
 					JSONObject about = new JSONObject(new String(json_str2));
 			       switch(service_id){
@@ -573,9 +577,12 @@ public class Services extends Activity{
 				       		break;
 				       case R.string.dropbox:
 				    	    this.id = about.getString("email");
-				       		this.person_name=about.getString("display_name");
-							this.quota_used = String.valueOf(about.getJSONObject("quota_info").getLong("normal")); 
-							this.quota_total = String.valueOf(about.getJSONObject("quota_info").getLong("quota"));
+				       		this.person_name=about.getJSONObject("name").getString("display_name");
+				       		String json_str3 =new HTTPRequest(httpMethod,ctx.getResources().getString(o.getUrl(3))+"users/get_space_usage", headers,new byte[0]).getContent();
+							json_str3 = json_str3.substring(json_str3.indexOf("{"), json_str3.lastIndexOf("}") + 1);
+							JSONObject space = new JSONObject(new String(json_str3));
+							this.quota_used = String.valueOf(space.getLong("used")); 
+							this.quota_total = String.valueOf(space.getJSONObject("allocation").getLong("allocated"));
 							break;
 				       case R.string.box:
 							this.id = about.getString("login");
@@ -609,20 +616,20 @@ public class Services extends Activity{
 				 	case R.string.google: return new FilePropertySet("title","id","mimeType","createdDate","modifiedDate","quotaBytesUsed",""); 
 				 	case R.string.microsoft: return new FilePropertySet("name","id","mimeType","createdDateTime","lastModifiedDateTime","size","folder"); 
 				 	case R.string.box: return new FilePropertySet("name","id","type","created_at","modified_at","size","");
-				 	case R.string.dropbox: return new FilePropertySet("path","path","mime_type","client_mtime","modified","bytes","");
+				 	case R.string.dropbox: return new FilePropertySet("name","path_display",".tag","server_modified","server_modified","size",".tag");
 				 }
 			}else if(this.method.equals("WebDAV")){
 				return new FilePropertySet("href","href","getcontenttype","creationdate","getlastmodified","getcontentlength","resourcetype");
 			}
 			return null;
 		}
-		public String getChildUrl(String baseurl,String id){
+		public String getListUrl(String baseurl,String id){
 			Path p = getPaths(baseurl);
 			if(method.equals("OAuth2")){
 				String params="";
 				switch(service_id){
 					case R.string.google: return baseurl+p.drive+"?q="+ "'"+id+"'+in+parents+and+trashed=false";
-					case R.string.dropbox: return baseurl+"metadata/"+p.drive+id;
+					case R.string.dropbox: return baseurl+"files/list_folder";
 					case R.string.box: params = "?fields=type,id,name,created_at,size,modified_at";
 				}
 				return baseurl+p.drive+"/"+id+"/"+p.child+params;
@@ -631,12 +638,51 @@ public class Services extends Activity{
 				return new URL(u.protocol, u.host, u.port, "", "").getURLString()+id;
 			}
 		}	
+		public String getSearchUrl(String baseurl,String id, String keyword){
+			Path p = getPaths(baseurl);
+			if(method.equals("OAuth2")){
+				switch(service_id){
+					case R.string.google: return baseurl+p.drive+"?q=title+contains+'"+keyword+"'+and+trashed=false";
+					case R.string.dropbox: return baseurl+"files/search";
+					case R.string.box: return baseurl+"search?query="+keyword+"&fields=type,id,name,created_at,size,modified_at";
+					case R.string.microsoft: return baseurl+"root/view.search?q="+keyword;
+				}
+				return null;
+			}else{
+				return null;
+			}
+		}
+		public String getTrashUrl(String baseurl){
+			Path p = getPaths(baseurl);
+			if(method.equals("OAuth2")){
+				switch(service_id){
+					case R.string.google: return baseurl+p.drive+"?q=trashed=true";
+					case R.string.box:  return baseurl+p.drive + "/trash/items?fields=type,id,name,created_at,size,modified_at";
+					default: return null;
+				}
+			}else{
+				return null;
+			}	
+		}
+		public String getSharedUrl(String baseurl){
+			Path p = getPaths(baseurl);
+			if(method.equals("OAuth2")){
+				switch(service_id){
+					case R.string.google: return baseurl+p.drive+"?q=sharedWithMe=true";
+					case R.string.dropbox: return baseurl+"sharing/list_folders";
+					case R.string.microsoft: return baseurl+"view.sharedWithMe";
+					default: return null;
+				}
+			}else{
+				return null;
+			}	
+		}
 		public boolean is_folder(String content){
 		Services.FilePropertySet pns=getNameSet();
 		try {
 			if(method.equals("OAuth2")){
 			switch(service_id){
-		 		case R.string.dropbox: return new JSONObject(new String(content)).optBoolean("is_dir");
+		 		case R.string.dropbox: return utils.getProperty(method, content, pns.folder_type).equals("folder");
 		 		case R.string.google: return utils.getProperty(method,content,pns.type).equals("application/vnd.google-apps.folder");
 		 		case R.string.box: return utils.getProperty(method,content,pns.type).equals("folder");
 		 		case R.string.microsoft: return !utils.getProperty(method, content, "folder").equals("-");
@@ -655,7 +701,7 @@ public class Services extends Activity{
 				case R.string.google: return new Path("files","","root");
 				case R.string.microsoft: return new Path("items","children","root");
 				case R.string.box: return new Path("folders","items","0");
-				case R.string.dropbox: return new Path("auto","","");
+				case R.string.dropbox: return new Path("/","","");
 				default: return new Path("","","");
 				}		
 			}else{
@@ -679,7 +725,6 @@ public class Services extends Activity{
 					OAuth2 o = new OAuth2(service_id);
 					 if(utils.tokenExpired(FileAccessActivity.expires)){
 						 credentials = o.getNewTokens(credentials);
-						 System.out.println(credentials);
 						 }
 				String[] details = credentials.split("&&");
 				return "Authorization: Bearer "+details[0];
@@ -738,25 +783,43 @@ public class Services extends Activity{
 		public ArrayList<String> list_children(String dir_id){
 			ArrayList<String> children = new ArrayList<String>();
 			ArrayList<String> headers=new ArrayList<String>();
-			 String url = getChildUrl(baseurl, dir_id);
+			String url;
+			if(dir_id.equals("#shared")){
+				url = getSharedUrl(baseurl);
+			}else if(dir_id.equals("#trash")){
+				url = getTrashUrl(baseurl);
+			}else{
+				url = getListUrl(baseurl, dir_id);
+			}
+			try{
 			if(method.equals("OAuth2")){
-				 try{
+				 
 				headers.add(useAuthHeader(credentials));
-				 String str=new HTTPRequest("GET",url, headers,new byte[0]).getContent();	 
+				byte[] arg = new byte[0];
+				String httpMethod = "GET";
+				if(service_id==R.string.dropbox){
+					if(!dir_id.equals("#shared") && !dir_id.equals("#trash")){
+						headers.add("Content-Type: application/json");
+						arg = utils.strToBytes(new JSONObject().put("path", dir_id).toString());
+					}
+					httpMethod = "POST";
+					
+				}
+				 String str=new HTTPRequest(httpMethod,url, headers,arg).getContent();	 
 				 str = str.substring(str.indexOf("{"), str.lastIndexOf("}") + 1);
 				 JSONObject content = new JSONObject(new String(str));
 				  String list_property="";
 				 switch(service_id){
-				 case R.string.google: list_property="items"; break;
-				 case R.string.microsoft: list_property = "value"; break;
-				 case R.string.box: list_property = "entries"; break;
-				 case R.string.dropbox: list_property = "contents"; break;
-				 default: 
+					 case R.string.google: list_property="items"; break;
+					 case R.string.microsoft: list_property = "value"; break;
+					 case R.string.box: list_property = "entries"; break;
+					 case R.string.dropbox: list_property = "entries"; break;
+					 default: 
 				 }
 				 JSONArray json_items = content.getJSONArray(list_property);
 				 int c = json_items.length();
 				 for(int i = 0; i < c; i++){children.add(json_items.getJSONObject(i).toString());}
-				 }catch(Exception e){e.printStackTrace();}
+				
 			 }else if(method.equals("WebDAV")){
 				 headers.add("Depth: 1");
 				 headers.add(useAuthHeader(credentials));
@@ -773,12 +836,8 @@ public class Services extends Activity{
 					  children.add(str.substring(initial+change+start.length(), initial+end));
 					  initial = initial+end+finish.length();
 				 }
-				 try{
 				 children.remove(0);
-				 }catch(Exception e){
-					 e.printStackTrace();
-				 }
-			 }
+			 } }catch(Exception e){e.printStackTrace();}
 			return children;
 		}		
 		public void copy(boolean isFolder, String id, final String name, String dest_id){
@@ -802,9 +861,7 @@ public class Services extends Activity{
 	        	  String site = new URL(u.protocol, u.host, u.port, "", "").getURLString();
 	        	  headers.add(useAuthHeader(credentials));
 	        	  if(method.equals("OAuth2")){
-	        		  if(service_id!=R.string.dropbox){
-	        			  headers.add("Content-Type: application/json");
-	        		  }
+	        		    headers.add("Content-Type: application/json");
 	        		  try {
 				 switch(service_id){
 				 	case R.string.google:
@@ -828,27 +885,26 @@ public class Services extends Activity{
 				 		json_str = json.toString();
 				 		break;
 				 	case R.string.dropbox:
-	         	  		path = "/1/fileops/copy";
-	         	  		headers.add("Content-Type: application/x-www-form-urlencoded");
-	         	  		json_str = "root=auto&from_path="+id+"&to_path="+dest_id+"/"+name;
+	         	  		path = "/2/files/copy";
+	         	  		System.out.print(id);
+	         	  		System.out.print(dest_id);
+	         	  		json_str = new JSONObject().put("from_path",id).put("to_path",dest_id+"/"+name).toString();
 	         	  		break;
 				 }
 	        		  } catch (Exception e) {e.printStackTrace();}
 	        		  if(cont){
-				 Services.HTTPRequest req = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str));
-				 System.out.println(req.getStatus());
+	        			  	String content = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str)).getContent();
 	        		  }
 	        	  }
 
-	  	  if(method.equals("WebDAV")){
+	        	 if(method.equals("WebDAV")){
 		         	 String origin = new URL(u.protocol, u.host, u.port, "", "").getURLString()+id;
 					 String destination = new URL(u.protocol, u.host, u.port, "", "").getURLString()+dest_id+"/"+name;
 	         		 headers.add("Content-Type: application/xml");
 	         		 headers.add("Destination: "+ destination);
-	         		 Services.HTTPRequest req =  new HTTPRequest("COPY",origin, headers,new byte[0]);
-	         		 System.out.println(req.getStatus());
+	         		 new HTTPRequest("COPY",origin, headers,new byte[0]);
 	  	  		}	
-	  	ProgressActivity.progress.incrementProgressBy(1);
+	        	 ProgressActivity.progress.incrementProgressBy(1);
 	  		
 			}
 		
@@ -860,10 +916,10 @@ public class Services extends Activity{
          	  JSONObject json = new JSONObject();
          	  ArrayList<String> headers = new ArrayList<String>();
          	  headers.add(useAuthHeader(credentials));
+         	  headers.add("Content-Type: application/json");
          	  String HTTPVerb = "POST"; String req_url = "";
          	  if(method.equals("OAuth2")){
          		 try {
-         			if(service_id!=R.string.dropbox){headers.add("Content-Type: application/json");}
          	  switch(service_id){
          	  	case R.string.google:	
          	  		path ="/drive/v2/files"; 
@@ -887,9 +943,9 @@ public class Services extends Activity{
          	  		json_str = json.toString();
          	  		break;
          	  	case R.string.dropbox: 
-         	  		path = "/1/fileops/create_folder";
-         	  		headers.add("Content-Type: application/x-www-form-urlencoded");
-         	  		json_str = "root=auto&path="+parent_id+"/"+name;
+         	  		path = "/2/files/create_folder";
+         	  		json.put("path", parent_id+"/"+name);
+         	  		json_str = json.toString();
          	  		break;
          	  }
          	  
@@ -900,7 +956,7 @@ public class Services extends Activity{
          	  if(method.equals("WebDAV")){
          		 headers.add("Content-Type: application/xml");
          		 HTTPVerb = "MKCOL";
-         		 req_url = getChildUrl(baseurl, parent_id)+"/"+name;
+         		 req_url = getListUrl(baseurl, parent_id)+"/"+name;
          	  }
          	 Services.HTTPRequest req = new HTTPRequest(HTTPVerb,req_url, headers, utils.strToBytes(json_str));
          	String content = req.getContent();
@@ -930,9 +986,13 @@ public class Services extends Activity{
    		     		else{deleteurl = baseurl+"files/"+id+"/trash";}
    		     		break;
    		     	case R.string.dropbox:
-   		     		deleteurl = baseurl+"fileops/delete";
-   		     		headers.add(utils.Header("Content-Type","application/x-www-form-urlencoded"));
-   		     		 body = "root=auto&path="+id;
+   		     		deleteurl = baseurl+"files/delete";
+   		     		headers.add("Content-Type: application/json");
+   		     		try{
+   		     		body = new JSONObject().put("path", id).toString();
+   		     		}catch(Exception e){
+   		     			HTTPVerb="GET";
+   		     		}
    		     		break;
    		     	case R.string.microsoft:
    		     		HTTPVerb="DELETE";
@@ -951,7 +1011,6 @@ public class Services extends Activity{
 		     		else{deleteurl = baseurl+"files/"+id+"/trash";}
 		    		req = new HTTPRequest(HTTPVerb,deleteurl,headers,new byte[0]);
 		    	 }
-		    	 System.out.println(deleteurl);
 		    	return req.getStatus();	
 		}
 		public void rename(boolean isFolder,String id, String old_name,String name){
@@ -961,9 +1020,9 @@ public class Services extends Activity{
          	  if(method.equals("OAuth2")){
          		 ArrayList<String> headers = new ArrayList<String>();
 	         	  headers.add(useAuthHeader(credentials));
+	         	 headers.add("Content-Type: application/json");
 	         	 String HTTPVerb="PATCH";
 	         	  try {
-	         		 if(service_id!=R.string.dropbox){headers.add("Content-Type: application/json");}
          	  switch(service_id){
          	  	case R.string.google:	
          	  		path ="/drive/v2/files/"+id; 
@@ -980,15 +1039,13 @@ public class Services extends Activity{
          	  		break;
          	  	case R.string.dropbox: 
          	  		HTTPVerb="POST";
-         	  		path = "/1/fileops/move";
-         	  		headers.add("Content-Type: application/x-www-form-urlencoded");
-         	  		json_str="root=auto&from_path="+id+"&to_path="+(id+"}").replace(old_name+"}",name+"}").replace("}", "");
+         	  		path = "/2/files/move";
+         	  		json_str=new JSONObject().put("from_path",id+"/"+old_name).put("to_path",id+"/"+name).toString();
          	  		break;
          	  }
          		} catch (JSONException e) {e.printStackTrace();}
          	  
-         	  Services.HTTPRequest req = new HTTPRequest(HTTPVerb,site+path, headers, utils.strToBytes(json_str));
-         	  System.out.println(req.getStatus());
+         	 new HTTPRequest(HTTPVerb,site+path, headers, utils.strToBytes(json_str));
 
          	  }
          	  
@@ -1001,9 +1058,8 @@ public class Services extends Activity{
 				 String destination = new URL(u.protocol, u.host, u.port, "", "").getURLString()+new_id;
          		 headers.add("Content-Type: application/xml");
          		 headers.add("Destination: "+ destination);
-         		 Services.HTTPRequest req =  new HTTPRequest("MOVE",origin, headers,new byte[0]);
-         		 System.out.println(req.getStatus());
-	         	 
+         		 new HTTPRequest("MOVE",origin, headers,new byte[0]);
+         		 
          	  }
 		}
 		public void move(boolean isFolder,String id, String name, String origin_id,String dest_id){
@@ -1016,9 +1072,7 @@ public class Services extends Activity{
         	  String site = new URL(u.protocol, u.host, u.port, "", "").getURLString();
         	  headers.add(useAuthHeader(credentials));
         	  if(method.equals("OAuth2")){
-        		  if(service_id!=R.string.dropbox){
-        			  headers.add("Content-Type: application/json");
-        		  }
+        		   headers.add("Content-Type: application/json");
         		  try {
 			 switch(service_id){
 			 	case R.string.google:
@@ -1049,16 +1103,14 @@ public class Services extends Activity{
 			 		json_str = json.toString();
 			 		break;
 			 	case R.string.dropbox:
-         	  		path = "/1/fileops/move";
-         	  		headers.add("Content-Type: application/x-www-form-urlencoded");
-         	  		json_str= "root=auto&from_path="+id+"&to_path="+dest_id+"/"+name;
+         	  		path = "/2/files/move";
+         	  		json_str = new JSONObject().put("from_path",origin_id+"/"+name).put("to_path",dest_id+"/"+name).toString();         	  		
          	  		break;
 			 }
         		  } catch (Exception e) {e.printStackTrace();}
         		  if(cont){
-			 Services.HTTPRequest req = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str));
-			 System.out.println(req.getStatus());
-        		  }
+        			  String stat = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str)).getContent();
+				  }
         	  }
 
   	  if(method.equals("WebDAV")){
@@ -1066,8 +1118,7 @@ public class Services extends Activity{
 				 String destination = new URL(u.protocol, u.host, u.port, "", "").getURLString()+dest_id+"/"+name;
          		 headers.add("Content-Type: application/xml");
          		 headers.add("Destination: "+ destination);
-         		 Services.HTTPRequest req =  new HTTPRequest("MOVE",origin, headers,new byte[0]);
-         		 System.out.println(req.getStatus());
+         		 new HTTPRequest("MOVE",origin, headers,new byte[0]);
   	  		}	
 		}
 		public File download(boolean isFolder, String id, final String name, File local_path, final int notify_id){
@@ -1104,15 +1155,19 @@ public class Services extends Activity{
 	        	  headers.add(useAuthHeader(credentials));
 				if(method.equals("OAuth2")){
 					switch(service_id){
-					case R.string.google:
-						path = "/drive/v2/files/"+id+"?alt=media"; break;
-					case R.string.microsoft:
-						path = "/v1.0/drive/items/"+id+"/content"; break;
-					case R.string.box:
-						path = "/files/"+id+"/content"; break;
+					case R.string.google: path = "/drive/v2/files/"+id+"?alt=media"; break;
+					case R.string.microsoft: path = "/v1.0/drive/items/"+id+"/content"; break;
+					case R.string.box: path = "/files/"+id+"/content"; break;
 					case R.string.dropbox:
+						HTTPVerb="POST";
 						site = "https://content.dropboxapi.com:443";
-						path = "/1/files/auto"+id;
+						path = "/2/files/download";
+		      			  try {
+							headers.add("Dropbox-Api-Arg: "+new JSONObject().put("path",id).toString());
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+						
 						break;
 					}
 				}else if(method.equals("WebDAV")){
@@ -1122,11 +1177,10 @@ public class Services extends Activity{
 					if(req.getStatus().contains("302")){
 						req = new HTTPRequest(HTTPVerb, utils.getHeaderValue(req.getHeaders(),"Location"), headers,new byte[0]);
 					}
+					
 					final int total = Integer.valueOf(utils.getHeaderValue(req.getHeaders(),"Content-Length"));
 					runOnUiThread(new Runnable(){public void run(){
 						ProgressActivity.progress.setMessage("Downloading "+name+".\r\n Size: "+utils.bytes_in_h_format((long)total));
-						//FileAccessActivity.notification.contentView.setTextViewText(R.id.txtstatus,"Downloading "+name+". Size: "+bytes_in_h_format((long)total));
-						//FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
 					}});
 
 				    try{
@@ -1156,16 +1210,16 @@ public class Services extends Activity{
 				}
 				return "Directory uploaded";
 			}else{
-			String HTTPVerb="POST"; 
-			HTTPRequest req; String upload_url, upload_id,path,site; JSONObject json;
-			  Services.URL u = new URL(baseurl);
-		  ArrayList<String>headers = new ArrayList<String>();
-		  headers.add(useAuthHeader(credentials));
-       	  site = new URL(u.protocol, u.host, u.port, "", "").getURLString();
-       	String mimeType=MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(file.getPath()));
-       	if(mimeType==null){
- 			mimeType = "application/octet-stream";
- 		} 
+				String HTTPVerb="POST"; 
+				HTTPRequest req; String upload_url, upload_id,path,site; JSONObject json;
+				  Services.URL u = new URL(baseurl);
+			  ArrayList<String>headers = new ArrayList<String>();
+			  headers.add(useAuthHeader(credentials));
+	       	  site = new URL(u.protocol, u.host, u.port, "", "").getURLString();
+	       	String mimeType=MimeTypeMap.getSingleton().getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(file.getPath()));
+	       	if(mimeType==null){
+	 			mimeType = "application/octet-stream";
+	 		} 
        	try{
        		FileInputStream fos = new FileInputStream(file);
        		final int total;
@@ -1262,33 +1316,43 @@ public class Services extends Activity{
 			 		req.send();
 			 		return req.getStatus();
 			 	case R.string.dropbox: 
-			 		HTTPVerb="PUT";
+			 		HTTPVerb="POST";
 			 		site = "https://content.dropboxapi.com:443"; 
+			 		headers.add("Content-Type: application/octet-stream");
 			 		if(total>chunk_size){
 				 		chunk = new byte[chunk_size];
 				 		fos.read(chunk);
 				 		headers.add("Content-Length: "+chunk_size);
-			 			req = new HTTPRequest(HTTPVerb,site+"/1/chunked_upload",headers).putChunk(chunk).send();
+			 			req = new HTTPRequest(HTTPVerb,site+"/2/files/upload_session/start",headers).putChunk(chunk).send();
 			 			remainingBytes-=chunk_size; uploadedBytes+=chunk_size;
 			 			String json_str = req.getContent();
 			 			json_str= json_str.substring(json_str.indexOf("{"),json_str.lastIndexOf("}")+1);
-				 		upload_id = utils.getProperty(method,json_str,"upload_id");
+				 		upload_id = utils.getProperty(method,json_str,"session_id");
+				 		String arg = new JSONObject().put("cursor",new JSONObject().put("session_id",upload_id).put("offset", uploadedBytes)).toString();
+				 		headers.add("Dropbox-API-Arg: "+arg);
 				 		while(remainingBytes>chunk_size){
 				 			fos.read(chunk);
-				 			req = new HTTPRequest(HTTPVerb,site+"/1/chunked_upload?upload_id="+upload_id+"&offset="+uploadedBytes,headers).putChunk(chunk).send();
+				 			req = new HTTPRequest(HTTPVerb,site+"/2/files/upload_session/append_v2",headers).putChunk(chunk).send();
 				 			remainingBytes-=chunk_size; uploadedBytes+=chunk_size;
+				 			arg = new JSONObject().put("cursor",new JSONObject().put("session_id",upload_id).put("offset", uploadedBytes)).toString();
+					 		headers.set(headers.size()-1,"Dropbox-API-Arg: "+arg);
 				 		}
 				 		remainder = new byte[remainingBytes];
 				 		fos.read(remainder);
-				 		headers.set(headers.size()-1,"Content-Length: "+remainder);
-				 		req = new HTTPRequest(HTTPVerb,site+"/1/chunked_upload?upload_id="+upload_id+"&offset="+uploadedBytes,headers).putChunk(remainder).send();
-				 		headers.set(headers.size()-1,"Content-Type: application/x-www-form-urlencoded");
-				 		req = new HTTPRequest("POST",site+"/1/commit_chunked_upload/auto/"+parent_id+"/"+file.getName(),headers,utils.strToBytes("upload_id="+upload_id));
+				 		headers.set(headers.size()-2,"Content-Length: "+remainder);
+				 		req = new HTTPRequest(HTTPVerb,site+"/2/files/upload_session/append_v2",headers).putChunk(remainder).send();
+				 		headers.set(headers.size()-3,"Content-Type: application/json");
+				 		headers.remove(headers.size()-1);
+				 		JSONObject args = new JSONObject();
+				 		args.put("cursor", new JSONObject().put("session_id", upload_id).put("offset", uploadedBytes));
+				 		args.put("commit", new JSONObject().put("path", parent_id+"/"+file.getName()));
+				 		req = new HTTPRequest("POST",site+"/2/files/upload_session/finish",headers,utils.strToBytes(args.toString()));
 				 		fos.close();
 				 		return req.getStatus();
 			 		}else{
 			 			byte[] whole = new byte[total];
-			 			path = "/1/files_put/auto/"+parent_id+"/"+file.getName();
+			 			path = "/2/files/upload";
+			 			headers.add("Dropbox-API-Arg: "+new JSONObject().put("path",parent_id+"/"+file.getName()).toString());
 			 			headers.add("Content-Length: "+total);
 			 			return new HTTPRequest(HTTPVerb,site+path,headers).putChunk(whole).send().getStatus();
 			 		}
@@ -1360,9 +1424,46 @@ public class Services extends Activity{
 			}
 		}
 		public ArrayList<String> search_children(String dirId, String keyword) {
-			return new ArrayList<String>();
-		}
-		
+			ArrayList<String> children = new ArrayList<String>();
+			ArrayList<String> headers=new ArrayList<String>();
+			 String url = getSearchUrl(baseurl, dirId,keyword);
+			if(method.equals("OAuth2")){
+				 try{
+					 String httpVerb = "GET";
+					 byte[] args = new byte[0];
+					 headers.add(useAuthHeader(credentials));
+					 if(service_id==R.string.dropbox){
+						 httpVerb="POST";
+						 headers.add("Content-Type: application/json");
+						 args = utils.strToBytes(new JSONObject().put("path", "").put("query", keyword).toString());
+					 }
+				
+				 String str=new HTTPRequest(httpVerb,url, headers,args).getContent();	
+				 str = str.substring(str.indexOf("{"), str.lastIndexOf("}") + 1);
+				 JSONObject content = new JSONObject(new String(str));
+				  String result_property="";
+				 switch(service_id){
+					 case R.string.google: result_property="items"; break;
+					 case R.string.microsoft: result_property = "value"; break;
+					 case R.string.box: result_property = "entries"; break;
+					 case R.string.dropbox: result_property = "matches"; break;
+					 default: 
+				 }
+				 JSONArray json_items = content.getJSONArray(result_property);
+				 int c = json_items.length();
+				 for(int i = 0; i < c; i++){
+					 if(service_id==R.string.dropbox){
+						 children.add(json_items.getJSONObject(i).getJSONObject("metadata").toString());
+					 }else{
+						 children.add(json_items.getJSONObject(i).toString());
+					 }
+				 }
+				 }catch(Exception e){e.printStackTrace();}
+			 }else if(method.equals("WebDAV")){
+				return children;
+			 }
+			return null;
+		}	
 		public ArrayList<String> sort(ArrayList<String> response_arr, String prop, boolean ascending) {
 			Map<String, String> items = new HashMap<String, String>();
 			ArrayList<Long> values = new ArrayList<Long>();
@@ -1379,7 +1480,7 @@ public class Services extends Activity{
 						switch(service_id){
 							case R.string.google: dateFormat = "yyyy-MM-dd'T'HH:mm:ss"; break;
 							case R.string.dropbox: dateFormat="EEE, dd MMM yyyy HH:mm:ss"; break;
-							case R.string.box: dateFormat="EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.box: dateFormat="yyyy-MM-dd'T'HH:mm:ss"; break;
 							case R.string.webdav: dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
 							case R.string.microsoft: dateFormat="yyyy-MM-dd'T'HH:mm:ss"; break;
 							default:dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
@@ -1402,7 +1503,7 @@ public class Services extends Activity{
 					}
 				}
 				else{
-					id = findPosition(item.name, 13);
+					id = utils.findPosition(item.name, 13);
 				}
 				while(items.containsKey(id+"$"+Integer.toString(count))){
 					count++;
@@ -1410,7 +1511,7 @@ public class Services extends Activity{
 				items.put(id+"$"+Integer.toString(count), response_arr.get(i));
 				values.add(id);
 			}
-			ArrayList<Long> sorted_values = merge_sort(values, ascending);
+			ArrayList<Long> sorted_values = utils.merge_sort(values, ascending);
 			for(int i=0; i<sorted_values.size(); i++){
 				int count = 0; 
 				String key;
@@ -1425,67 +1526,11 @@ public class Services extends Activity{
 			}
 			return results;
 		}		
-		private Long findPosition(String name, int maxLength) {
-			Long value = 0L;
-			char[] word = name.toLowerCase().toCharArray();
-			for(int i=0; i<Math.min(name.length(),maxLength); i++){
-				value = value*26;
-				int letterValue = Character.getNumericValue(word[i]) - Character.getNumericValue('a');
-				value+=letterValue;
-			}
-			for(int i=name.length(); i<maxLength; i++){
-				value = value*26;
-			}
-			return value;
-		}
-		public ArrayList<Long> merge_sort(ArrayList<Long> list, boolean ascend){
-			if(list.size()==1){
-				return list;
-			}else{
-				int middle = (int) Math.floor(list.size()/2);
-				ArrayList<Long> first = new ArrayList<Long>(list.subList(0, middle));
-				ArrayList<Long> second = new ArrayList<Long>(list.subList(middle, list.size()));
-				return merge(merge_sort(first,ascend), merge_sort(second, ascend), ascend);
-			}
-		}
- 		public ArrayList<Long> merge(ArrayList<Long> list1, ArrayList<Long> list2, boolean ascend){
-			ArrayList<Long> merged_list = new ArrayList<Long>();
-			int index1 = 0; int index2 = 0;
-			while(index1<list1.size() && index2<list2.size()){
-				if(ascend){
-					if(list1.get(index1)<list2.get(index2)){
-						merged_list.add(list1.get(index1));
-						index1++;
-					}else{
-						merged_list.add(list2.get(index2));
-						index2++;
-					}
-				
-				}else{
-					if(list2.get(index2)>list1.get(index1)){
-						merged_list.add(list2.get(index2));
-						index2++;
-					}else{
-						merged_list.add(list1.get(index1));
-						index1++;
-					}
-				}
-			}
-			for(int i=index1; i<list1.size(); i++){
-				merged_list.add(list1.get(i));
-			}
-			for(int i=index2; i<list2.size(); i++){
-				merged_list.add(list2.get(i));
-			}
-			return merged_list;
-			
-		}
 		public ArrayList<String> filter(String dirId, String type,
 				String dateCriteria, String sizeCriteria, String nameCriteria) {
 			return null;
 		}
 	}
- 	
 	public class Path{
 		String drive, child, root;
 		public Path(String drive, String child, String root){

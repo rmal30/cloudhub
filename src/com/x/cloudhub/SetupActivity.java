@@ -96,6 +96,7 @@ public class SetupActivity extends Activity{
 			            		   utils.clearWebViewDatabases(SetupActivity.this); wv1.clearCache(true); authenticated=true;
 			             		   String client_secret=o.getClientSecret();
 			             		   String baseurl = getResources().getString(o.getUrl(3));
+			             		   System.out.println(baseurl);
 			    					String args="code="+code+"&"+"client_id="+client_id+"&"+"client_secret="+client_secret+"&"+"redirect_uri="+URLEncoder.encode(redirect_uri)+"&"+"grant_type="+grant_type;
 			    					try {	        
 			    						

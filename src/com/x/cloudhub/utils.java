@@ -184,4 +184,61 @@ public class utils {
 	        myDB.close();
 	        return services;
 	}
+
+	static public Long findPosition(String name, int maxLength) {
+		Long value = 0L;
+		char[] word = name.toLowerCase().toCharArray();
+		for(int i=0; i<Math.min(name.length(),maxLength); i++){
+			value = value*26;
+			int letterValue = Character.getNumericValue(word[i]) - Character.getNumericValue('a');
+			value+=letterValue;
+		}
+		for(int i=name.length(); i<maxLength; i++){
+			value = value*26;
+		}
+		return value;
+	}
+	static public ArrayList<Long> merge_sort(ArrayList<Long> list, boolean ascend){
+		if(list.size()==1){
+			return list;
+		}else{
+			int middle = (int) Math.floor(list.size()/2);
+			ArrayList<Long> first = new ArrayList<Long>(list.subList(0, middle));
+			ArrayList<Long> second = new ArrayList<Long>(list.subList(middle, list.size()));
+			return merge(merge_sort(first,ascend), merge_sort(second, ascend), ascend);
+		}
+	}
+		static public ArrayList<Long> merge(ArrayList<Long> list1, ArrayList<Long> list2, boolean ascend){
+		ArrayList<Long> merged_list = new ArrayList<Long>();
+		int index1 = 0; int index2 = 0;
+		while(index1<list1.size() && index2<list2.size()){
+			if(ascend){
+				if(list1.get(index1)<list2.get(index2)){
+					merged_list.add(list1.get(index1));
+					index1++;
+				}else{
+					merged_list.add(list2.get(index2));
+					index2++;
+				}
+			
+			}else{
+				if(list2.get(index2)>list1.get(index1)){
+					merged_list.add(list2.get(index2));
+					index2++;
+				}else{
+					merged_list.add(list1.get(index1));
+					index1++;
+				}
+			}
+		}
+		for(int i=index1; i<list1.size(); i++){
+			merged_list.add(list1.get(i));
+		}
+		for(int i=index2; i<list2.size(); i++){
+			merged_list.add(list2.get(i));
+		}
+		return merged_list;
+		
+	}
+
 }

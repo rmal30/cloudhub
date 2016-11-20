@@ -9,23 +9,16 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:gravity="right" >
+
         <ImageView
-            android:id="@+id/service"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:padding="8dp"
-            android:src="@drawable/filetype_unknown" />
-        <CheckBox
-            android:id="@+id/checkBox1"
+            android:id="@+id/icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignRight="@+id/service"
-            android:layout_weight="1"
-            android:focusable="false"
-            android:text="@string/none" />
+            android:padding="8dp"
+            android:src="@drawable/filetype_unknown" />
+
         <TextView
-            android:id="@+id/quota"
+            android:id="@+id/item_quota"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -33,13 +26,25 @@
             android:text="Small Text"
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:textSize="14dp" />
+
+        <CheckBox
+            android:id="@+id/checkBox1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignRight="@+id/icon"
+            android:layout_weight="1"
+            android:focusable="false"
+            android:text="@string/none" />
+
         <LinearLayout
             android:id="@+id/linearLayout1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical" >
+
             <TextView
-                android:id="@+id/name"
+                android:id="@+id/item_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="64dp"
@@ -50,17 +55,21 @@
                 android:text="ListView"
                 android:textAppearance="?android:attr/textAppearanceLarge"
                 android:textSize="16dp" />
+
             <TextView
-                android:id="@+id/id"
+                android:id="@+id/item_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="64dp"
                 android:layout_marginRight="64dp"
+                android:layout_weight="1"
                 android:gravity="center_horizontal"
                 android:lines="1"
                 android:text="SubItem"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textSize="14dp" />
         </LinearLayout>
+
     </RelativeLayout>
+
 </LinearLayout>

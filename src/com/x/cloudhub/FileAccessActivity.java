@@ -60,8 +60,10 @@ public class FileAccessActivity extends Activity{
 	 IntentFilter filter = new IntentFilter();
 	 public class ItemAdapter extends BaseAdapter {
 		private ArrayList<Services.Item> internal_items;
+		public int internal_view;
 	    public ItemAdapter(Context context, ArrayList<Services.Item> items) {
 	    	this.internal_items = items;
+	    	this.internal_view = R.layout.list_items_view;
 	    }
 		@Override
 		public Services.Item getItem(int arg0) {return this.internal_items.get(arg0);}
@@ -69,11 +71,14 @@ public class FileAccessActivity extends Activity{
 		public long getItemId(int arg0) {return arg0;}
 	    public View getView(final int position, View convertView, ViewGroup parent) {
 	       Services.Item item = getItem(position);    
-	       if (convertView == null) {convertView = LayoutInflater.from(ctx).inflate(R.layout.list_items_view, parent, false);}
-	       TextView txtName = (TextView) convertView.findViewById(R.id.name);
-	       TextView txtId = (TextView) convertView.findViewById(R.id.id);
-	       TextView txtQuota = (TextView) convertView.findViewById(R.id.quota);
-	       ImageView service = (ImageView) convertView.findViewById(R.id.service);
+	       
+	       if (convertView==null || convertView.getId()!=this.internal_view) {
+	    	   convertView = LayoutInflater.from(ctx).inflate(this.internal_view, parent, false);
+	       }
+	       TextView txtName = (TextView) convertView.findViewById(R.id.item_name);
+	       TextView txtId = (TextView) convertView.findViewById(R.id.item_type);
+	       TextView txtQuota = (TextView) convertView.findViewById(R.id.item_quota);
+	       ImageView service = (ImageView) convertView.findViewById(R.id.icon);
 	       CheckBox select = (CheckBox) convertView.findViewById(R.id.checkBox1);
 	       txtName.setText(item.name); txtId.setText(item.type); 
 	       txtQuota.setText(utils.bytes_in_h_format(item.size));
@@ -141,7 +146,7 @@ public class FileAccessActivity extends Activity{
 	    	 });
 	        curitems.setAdapter(item_adapter); curitems2.setAdapter(item_adapter);
 	        current_id = service.getPaths(baseurl).root;
-	        showFiles(current_id,"Get children",null);
+	        showFiles(current_id,"List",null);
 	    }
 	
 
@@ -150,7 +155,7 @@ public class FileAccessActivity extends Activity{
 		  String chosen_id = items.get(position).id;
 		 	if(items.get(position).isFolder){
 		 		previousIds.add(current_id);
-				 current_id = chosen_id; showFiles(current_id,"Get children",null);
+				 current_id = chosen_id; showFiles(current_id,"List",null);
 			 }else{
 				 String info = utils.getItemDetails(items, position);
 			        new AlertDialog.Builder(ctx)
@@ -176,12 +181,12 @@ public class FileAccessActivity extends Activity{
  
 	 public void showFiles(final String dir_id, final String op,final String[] params){
 		 items.clear();
-		 URLText.setText(service.getChildUrl(baseurl, dir_id));
+		 URLText.setText(service.getListUrl(baseurl, dir_id));
 		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
 		 findViewById(R.id.back).setVisibility(View.GONE);
 		 Thread t = new Thread(){
 			 public void run(){
-				 if(op.equals("Get children")){children = io.list_children(dir_id);}				
+				 if(op.equals("List")){children = io.list_children(dir_id);}				
 				 else if(op.equals("Sort")){children = io.sort(children, params[0], Boolean.parseBoolean(params[1]));}
 				 else if(op.equals("Search")){children = io.search_children(dir_id, params[0]);}
 				 else if(op.equals("Filter")){children = io.filter(dir_id, params[0], params[1], params[2], params[3]);}
@@ -447,7 +452,7 @@ public class FileAccessActivity extends Activity{
     	 }else{
     		 findViewById(R.id.back).setVisibility(View.GONE);
     	 }
-		 showFiles(current_id,"List children", null);
+		 showFiles(current_id,"List", null);
 	 }
 	 public void selectAll(View view){
 		 for(int i=0; i<items.size(); i++){
@@ -461,10 +466,12 @@ public class FileAccessActivity extends Activity{
 		 if(findViewById(R.id.curitems).getVisibility()==View.VISIBLE){
 			 findViewById(R.id.curitems).setVisibility(View.GONE);
 			 findViewById(R.id.curitems2).setVisibility(View.VISIBLE);
+			 item_adapter.internal_view=R.layout.grid_items_view;
 			 findViewById(R.id.grid_list).setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_view_list_white_48dp));
 		 }else{
 			 findViewById(R.id.curitems).setVisibility(View.VISIBLE);
 			 findViewById(R.id.curitems2).setVisibility(View.GONE);
+			 item_adapter.internal_view=R.layout.list_items_view;
 			 findViewById(R.id.grid_list).setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_view_module_white_48dp));
 		 }
 	 }
@@ -485,7 +492,7 @@ public class FileAccessActivity extends Activity{
 		        		            @Override
 		        		            public void onClick(DialogInterface dialog, int which) {
 		        		         	  String name = input.getText().toString();
-		        		         	  String status =io.mkdir(current_id, name);
+		        		         	  String status = io.mkdir(current_id, name);
 		        		         	 showFiles(current_id,"List", null);
 		        		         	 Toast.makeText(ctx, status.split("\r\n")[0], 2000).show();
 		        		         	  }
@@ -671,7 +678,7 @@ public class FileAccessActivity extends Activity{
 		 alert.show();	 
 	 }
 		 
-		public String[][] getBookmarksFromDB() {
+ 	 public String[][] getBookmarksFromDB() {
 				SQLiteDatabase myDB = ctx.openOrCreateDatabase("services.db", Context.MODE_PRIVATE, null);
 				ArrayList<String> names = new ArrayList<String>(); 
 				ArrayList<String> ids = new ArrayList<String>();
@@ -698,8 +705,8 @@ public class FileAccessActivity extends Activity{
 	            @Override
 	            public void onClick(DialogInterface dialog, int which) {
 	         	  String keyword = input.getText().toString();
-	         	  previousIds.add(current_id);
-	         	  showFiles(current_id,"Search", new String[]{keyword});
+	         	  	previousIds.add(current_id);
+	         	  	showFiles(current_id,"Search", new String[]{keyword});
 	         	  }
 	        });
 	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -764,17 +771,19 @@ public class FileAccessActivity extends Activity{
 		    	copy_done.flags |= Notification.FLAG_AUTO_CANCEL; 
 		    	
 		    	FileAccessActivity.mNotifyManager.notify(title, 0, copy_done);
+				 ProgressActivity.progress.dismiss();
 		 }
-		 dialog.dismiss();
-		 ProgressActivity.progress.dismiss();
-		 runOnUiThread(new Runnable(){public void run(){showFiles(current_id,"List", null);}});
+		 
+		 runOnUiThread(new Runnable(){public void run(){
+			 dialog.dismiss();
+			 showFiles(current_id,"List", null);}});
 		}
 		};
 		mThread.start();
 		
 		 item_adapter.notifyDataSetChanged();
 		 sprefs.edit().clear();
-		 findViewById(R.id.button1).setVisibility(View.INVISIBLE);
+		 findViewById(R.id.paste).setVisibility(View.INVISIBLE);
 	 }
 	 public void upload(View v){
 		 	notify_id = utils.genRandomNum(10000); 
@@ -862,7 +871,6 @@ public class FileAccessActivity extends Activity{
 			}catch(IOException e) {
 				e.printStackTrace();
 			}
- 		 upload(null);
 		 }else if(requestCode==1){
 			 Uri uri = data.getData();
 		        android.database.Cursor cursor = getContentResolver().query(uri,new String[]{MediaStore.Images.Media.DATA}, null, null, null);
@@ -870,7 +878,6 @@ public class FileAccessActivity extends Activity{
 		        int columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
 		        String picturePath = cursor.getString(columnIndex);
 		        cursor.close();
-		        System.out.println(picturePath);
 	 	 		uploadFile(new File(picturePath));
 		 }else{
 			 Uri uri = data.getData();		       
@@ -903,6 +910,4 @@ public class FileAccessActivity extends Activity{
 }
 /*
 Empty google trash: 	DELETE  /files/trash	
-WebDAV
-PUT - Upload/Modify file
  */

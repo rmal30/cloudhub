@@ -76,16 +76,9 @@
               android:onClick="showSearchDialog"
               />
 
-      </LinearLayout>
-      <LinearLayout
-          android:id="@+id/default2"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:visibility="visible" >
-
           <Button
               android:id="@+id/upload"
-              android:layout_width="match_parent"
+              android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:onClick="upload"
               android:text="@string/up"
@@ -93,7 +86,7 @@
 
           <ImageButton
               android:id="@+id/paste"
-              android:layout_width="match_parent"
+              android:layout_width="wrap_content"
               android:layout_height="match_parent"
               android:background="@drawable/ic_content_paste_white_48dp"
               android:onClick="paste"
@@ -178,10 +171,18 @@
 
               <GridView
                   android:id="@+id/curitems2"
-                  android:layout_width="wrap_content"
+                  android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   android:numColumns="3"
-                  android:visibility="gone" >
+                  android:visibility="gone" 
+        		  android:gravity="center"
+        		  android:horizontalSpacing="6dp"
+        		  android:listSelector="#00000000"
+        		  android:scrollbars="none"
+        		  android:stretchMode="columnWidth"
+        		  android:verticalSpacing="16dp" 
+                  
+                  >
 
               </GridView>
       </LinearLayout>
