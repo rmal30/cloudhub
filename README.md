@@ -9,8 +9,6 @@ Add FTP access
 
 Syncing offline
 
-Filtering files
-
 Overwriting files and folders
 
 Share files and folders to others
