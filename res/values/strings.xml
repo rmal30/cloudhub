@@ -26,6 +26,19 @@
 	<string name="date">Date</string>    
 	<string name="size">Size</string>
 	<string name="name">Name</string>  
+	
+	<string name="b">B</string>
+	<string name="kb">KB</string>
+	<string name="mb">MB</string>
+	<string name="gb">GB</string>
+	<string name="tb">TB</string>
+	<string-array name="size">
+	    <item>@string/b</item>
+	    <item>@string/kb</item>
+	    <item>@string/mb</item>
+	    <item>@string/gb</item>
+	    <item>@string/tb</item>
+	</string-array>    	
 	    
 	<string-array name="other">
 	    <item>@string/ftp</item>
@@ -102,5 +115,8 @@
 	    <string name="ascend">Ascending</string>
 	    <string name="descend">Descending</string>
 	    <string name="filter">Filter by:</string>
-	    <string name="to">To</string>  
+	    <string name="to">To</string>
+	    <string name="from">From</string>
+	    <string name="nofilter">No filter</string>
+	    <string name="clearfilters">Clear filters</string>  
 	</resources>

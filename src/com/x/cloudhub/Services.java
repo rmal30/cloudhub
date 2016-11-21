@@ -1526,9 +1526,66 @@ public class Services extends Activity{
 			}
 			return results;
 		}		
-		public ArrayList<String> filter(String dirId, String type,
-				String dateCriteria, String sizeCriteria, String nameCriteria) {
-			return null;
+		public ArrayList<String> filter(ArrayList<String> response_arr, String prop, String beginValue, String endValue) {
+			ArrayList<String> results = new ArrayList<String>();
+			Date d1 = null, d2 = null;
+			Long l1 = null, l2 = null;
+			if(prop.equals("Size")){
+				String[] arr = {"B", "KB", "MB", "GB", "TB"};
+				int mag1 = Arrays.asList(arr).indexOf(beginValue.split(" ")[1])*10;
+				int mag2 = Arrays.asList(arr).indexOf(endValue.split(" ")[1])*10;
+				l1 = Long.parseLong(beginValue.split(" ")[0])*((long)(Math.pow(2, mag1)));
+				l2 = Long.parseLong(endValue.split(" ")[0])*((long)(Math.pow(2, mag2)));
+			}
+			else if(prop.equals("Date")){
+				try {
+					SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss");
+					d1 = sdf.parse(beginValue+"T00:00:00");
+					d2 = sdf.parse(endValue+"T23:59:59");
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}	
+			}
+			for(int i=0; i<response_arr.size(); i++){
+				Item item = new Services.Item(method, service_id, response_arr.get(i));				
+				if(prop.equals("Size")){
+					long l = Long.parseLong(item.size);
+					if(l1<=l && l<=l2){
+						results.add(response_arr.get(i));
+					}
+				}
+				else if(prop.equals("Date")){
+					String dateFormat;
+					Date d = null;
+					try {
+						switch(service_id){
+							case R.string.google: dateFormat = "yyyy-MM-dd'T'HH:mm:ss"; break;
+							case R.string.dropbox: dateFormat="EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.box: dateFormat="yyyy-MM-dd'T'HH:mm:ss"; break;
+							case R.string.webdav: dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
+							case R.string.microsoft: dateFormat="yyyy-MM-dd'T'HH:mm:ss"; break;
+							default:dateFormat = "EEE, dd MMM yyyy HH:mm:ss"; break;
+						}
+						SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+						d = sdf.parse(item.modified);
+					}catch(Exception e){
+						e.printStackTrace();
+						dateFormat="EEE, dd MMM yyyy HH:mm:ss";
+						try {
+							d = new SimpleDateFormat(dateFormat).parse(item.modified);
+							//id = Long.valueOf(d.getTime());
+						} catch (ParseException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}	
+					}
+					if(d.after(d1) && d.before(d2)){
+						results.add(response_arr.get(i));
+					}
+					
+				}
+			}
+			return results;
 		}
 	}
 	public class Path{

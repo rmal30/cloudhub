@@ -40,11 +40,13 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -189,7 +191,7 @@ public class FileAccessActivity extends Activity{
 				 if(op.equals("List")){children = io.list_children(dir_id);}				
 				 else if(op.equals("Sort")){children = io.sort(children, params[0], Boolean.parseBoolean(params[1]));}
 				 else if(op.equals("Search")){children = io.search_children(dir_id, params[0]);}
-				 else if(op.equals("Filter")){children = io.filter(dir_id, params[0], params[1], params[2], params[3]);}
+				 else if(op.equals("Filter")){children = io.filter(children, params[0], params[1], params[2]);}
 			 runOnUiThread(new Runnable() {
                  @Override
                  public void run() {
@@ -551,32 +553,70 @@ public class FileAccessActivity extends Activity{
 	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
 	        });
 		 final AlertDialog alertDialog = builder.create();
-		;
 		 alertDialog.show();
 		 
 		 
 	 }
 	 public void showFilterDialog(View v){
 		 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		 builder.setTitle("Filter options:");
-		 builder.setView(LayoutInflater.from(this).inflate(R.layout.filter_options, null));
+		 builder.setTitle("Add filter:");
+		 final View dialogView = LayoutInflater.from(this).inflate(R.layout.filter_options, null);
+		 builder.setView(dialogView);
+		 RadioGroup rg = (RadioGroup) dialogView.findViewById(R.id.radioGroup1);
+		 rg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+	            @Override
+	            public void onCheckedChanged(RadioGroup group, int checkedId) {
+	                 int option = group.getCheckedRadioButtonId();
+	                 switch(option){
+	                 	case R.id.radio1:
+	                 		dialogView.findViewById(R.id.date).setVisibility(View.VISIBLE);
+	                 		dialogView.findViewById(R.id.size).setVisibility(View.GONE);
+	                 		break;
+	                 	case R.id.radio2:
+	                 		dialogView.findViewById(R.id.date).setVisibility(View.GONE);
+	                 		dialogView.findViewById(R.id.size).setVisibility(View.VISIBLE);
+	                 		break;
+	                 	default: 	                 		
+	                 		dialogView.findViewById(R.id.date).setVisibility(View.GONE);
+	                 		dialogView.findViewById(R.id.size).setVisibility(View.GONE);
+	                 		break;
+	                 }
+	            }
+	        });
 		 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() { 
 	            @Override
 	            public void onClick(DialogInterface dialog, int which) {
-	            	//String type = ((Spinner) ((AlertDialog) dialog).findViewById(R.id.sortType)).getSelectedItem().toString();	
-	            	//boolean ascending = ((RadioButton) ((AlertDialog) dialog).findViewById(R.id.ascend)).isChecked();
-	            	//sort(current_id, type, ascending);
 	            	previousIds.add(current_id);
+	            	int option = ((RadioGroup)((AlertDialog) dialog).findViewById(R.id.radioGroup1)).getCheckedRadioButtonId();
+	                 switch(option){
+	                 	case R.id.radio1:
+	                 		DatePicker dp1 = (DatePicker)((AlertDialog) dialog).findViewById(R.id.dateBegin);
+	                 		String date1 = String.valueOf(dp1.getYear()) +"/"+ String.valueOf(dp1.getMonth())+"/"+String.valueOf(dp1.getDayOfMonth());
+	                 		DatePicker dp2 = (DatePicker)((AlertDialog) dialog).findViewById(R.id.dateEnd);
+	                 		String date2 = String.valueOf(dp2.getYear()) +"/"+ String.valueOf(dp2.getMonth())+"/"+String.valueOf(dp2.getDayOfMonth());
+	                 		showFiles(current_id, "Filter", new String[]{"Date", date1, date2});
+	                 		break;
+	                 	case R.id.radio2:
+	                 		String num1 = ((EditText)((AlertDialog) dialog).findViewById(R.id.numBegin)).getText().toString();
+	                 		String mag1 = ((Spinner)((AlertDialog) dialog).findViewById(R.id.magBegin)).getSelectedItem().toString();
+	                 		String num2 = ((EditText)((AlertDialog) dialog).findViewById(R.id.numEnd)).getText().toString();
+	                 		String mag2 = ((Spinner)((AlertDialog) dialog).findViewById(R.id.magEnd)).getSelectedItem().toString();
+	                 		showFiles(current_id, "Filter", new String[]{"Size", num1+" "+mag1, num2+" "+mag2});
+	                 		break;
+	                 	default:
+	                 		showFiles(current_id, "List", null);
+	                 		break;
+	                 }
+	            	
 	         	}
 
 				
 	        });
-	        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 	            @Override
 	            public void onClick(DialogInterface dialog, int which) { dialog.cancel();}
 	        });
 		 final AlertDialog alertDialog = builder.create();
-		;
 		 alertDialog.show();
 		  
 		 

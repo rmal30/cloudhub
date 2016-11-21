@@ -2,37 +2,36 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="20dp"
     android:orientation="vertical" >
-
-    <LinearLayout
-        android:id="@+id/linearLayout1"
-        android:layout_width="match_parent"
+
+    <RadioGroup
+        android:id="@+id/radioGroup1"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_weight="1" >
-
-        <CheckBox
-            android:id="@+id/dateOp"
+        android:layout_weight="1"
+        android:orientation="horizontal" >
+
+        <RadioButton
+            android:id="@+id/radio0"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:checked="true"
+            android:text="@string/clearfilters" />
+
+        <RadioButton
+            android:id="@+id/radio1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/date" />
-
-        <CheckBox
-            android:id="@+id/sizeOp"
+
+        <RadioButton
+            android:id="@+id/radio2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="@string/size" />
-
-        <CheckBox
-            android:id="@+id/nameOp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/name" />
 
-    </LinearLayout>
+    </RadioGroup>
 
     <ScrollView
         android:id="@+id/scrollView1"
@@ -40,19 +39,29 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:scrollbars="vertical" >
-
+
         <LinearLayout
             android:id="@+id/linearLayout4"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="50dp"
             android:orientation="vertical" >
-
+
             <LinearLayout
                 android:id="@+id/date"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:orientation="vertical" >
+                android:orientation="vertical"
+                android:visibility="gone" >
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/from"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
 
                 <DatePicker
                     android:id="@+id/dateBegin"
@@ -73,48 +82,64 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1" />
-            </LinearLayout>
 
+            </LinearLayout>
+
             <LinearLayout
                 android:id="@+id/size"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:orientation="vertical" >
+                android:baselineAligned="false"
+                android:orientation="vertical"
+                android:visibility="gone" >
 
                 <LinearLayout
                     android:id="@+id/linearLayout2"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0dp"
                     android:layout_weight="1" >
+
+                    <TextView
+                        android:id="@+id/textView1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/from"
+                        android:textAppearance="?android:attr/textAppearanceLarge" />
 
                     <EditText
                         android:id="@+id/numBegin"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:inputType="number" />
+                        android:inputType="number" >
 
+                        <requestFocus />
+                    </EditText>
+
                     <Spinner
                         android:id="@+id/magBegin"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
+                        android:layout_weight="1"
+                        android:entries="@array/size" />
 
-                <TextView
-                    android:id="@+id/TextView01"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/to"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/linearLayout3"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_weight="1" >
+
+                    <TextView
+                        android:id="@+id/TextView01"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/to"
+                        android:textAppearance="?android:attr/textAppearanceLarge" />
 
                     <EditText
                         android:id="@+id/numEnd"
@@ -122,40 +147,15 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:inputType="number" />
-
+
                     <Spinner
                         android:id="@+id/magEnd"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1" />
+                        android:layout_weight="1"
+                        android:entries="@array/size" />
+
                 </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/letter"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" >
-
-                <Spinner
-                    android:id="@+id/azBegin"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-                <TextView
-                    android:id="@+id/textView2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/to"
-                    android:textAppearance="?android:attr/textAppearanceLarge" />
-
-                <Spinner
-                    android:id="@+id/azEnd"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
             </LinearLayout>
 
         </LinearLayout>
