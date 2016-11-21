@@ -12,5 +12,3 @@ Syncing offline
 Overwriting files and folders
 
 Share files and folders to others
-
-File operations with multiple files and folders

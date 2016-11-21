@@ -112,14 +112,14 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:background="@drawable/ic_content_copy_white_48dp" 
-              android:onClick="copy"
+              android:onClick="copyItems"
               />
           <ImageButton
               android:id="@+id/cut"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:background="@drawable/ic_content_cut_white_48dp" 
-              android:onClick="move"
+              android:onClick="cutItems"
               />
 
           <ImageButton
@@ -127,14 +127,14 @@
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:background="@drawable/ic_delete_white_48dp"
-              android:onClick="delete" />
+              android:onClick="trashItems" />
           <ImageButton
               android:id="@+id/download"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:background="@drawable/ic_file_download_white_48dp"
               android:src="@drawable/ic_file_download_white_48dp"
-              android:onClick="download"
+              android:onClick="downloadItems"
                />
           <ImageButton
               android:id="@+id/sync"

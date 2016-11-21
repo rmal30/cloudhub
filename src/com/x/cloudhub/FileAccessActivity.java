@@ -89,7 +89,7 @@ public class FileAccessActivity extends Activity{
 			@Override
 			public void onCheckedChanged(CompoundButton button, boolean isChecked) {
 				getItem(position).selected = isChecked;
-				if(anySelected(items)){
+				if(getSelectedCount(items)>0){
 					findViewById(R.id.actions).setVisibility(View.VISIBLE);
 					findViewById(R.id.default1).setVisibility(View.GONE);
 				}else{
@@ -138,7 +138,8 @@ public class FileAccessActivity extends Activity{
 			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);  
 	        curitems.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
 	    		 public void onItemClick(AdapterView<?> parentAdapter, View view, final int position, long id) {
-	    			itemClicked(position);
+	    			
+	    			 itemClicked(position);
 	    		 }
 	    	 });
 	        curitems2.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
@@ -150,10 +151,7 @@ public class FileAccessActivity extends Activity{
 	        current_id = service.getPaths(baseurl).root;
 	        showFiles(current_id,"List",null);
 	    }
-	
-
 	 public void itemClicked(final int position){
-		 if(!anySelected(items)){
 		  String chosen_id = items.get(position).id;
 		 	if(items.get(position).isFolder){
 		 		previousIds.add(current_id);
@@ -169,7 +167,6 @@ public class FileAccessActivity extends Activity{
 			        .setIcon(android.R.drawable.ic_dialog_info)
 			        .show();
 			 }
-		 }
 	}
 
 	 public void deselect(View view){
@@ -214,35 +211,193 @@ public class FileAccessActivity extends Activity{
 	 public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) {  
     	super.onCreateContextMenu(menu, v, menuInfo);  
     	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
-	     menu.setHeaderTitle("Options for " +items.get(info.position).name);
-	     menu.add(0, v.getId(), 0, "Details");
-	     menu.add(0, v.getId(), 0,"Download");
-	     menu.add(0, v.getId(), 0, "Rename");
-	     menu.add(0, v.getId(), 0, "Cut");
-	     menu.add(0, v.getId(), 0, "Copy");
-	    
-	     if(method.equals("OAuth2")){
-	    	 menu.add(0,v.getId(),0,"Edit");
-	    	 menu.add(0, v.getId(), 0, "Send to Trash");
-	     }
 	     
-	     if(service_id==R.string.google || service_id==R.string.box || method.equals("WebDAV")){
-	    	 menu.add(0, v.getId(), 0, "Delete permanently");
+	     items.get(info.position).selected = true;
+	     item_adapter.notifyDataSetChanged();
+	     if(getSelectedCount(items)>1){
+	    	 menu.setHeaderTitle("Options for " +getSelectedCount(items)+" items");
+		     menu.add(0, v.getId(), 0,"Download items");
+		     menu.add(0, v.getId(), 0,"Cut items");
+		     menu.add(0, v.getId(), 0,"Copy items");
+		     if(method.equals("OAuth2")){
+		    	 menu.add(0, v.getId(), 0, "Send items to Trash");
+		     }
+		     if(service_id==R.string.google || service_id==R.string.box || method.equals("WebDAV")){
+		    	 menu.add(0, v.getId(), 0, "Delete items permanently");
+		     }
+	     }else{
+	    	 menu.setHeaderTitle("Options for " +items.get(info.position).name);
+	         menu.add(0, v.getId(), 0, "Details");
+		     menu.add(0, v.getId(), 0, "Rename");
+		     menu.add(0, v.getId(), 0,"Download");
+		     menu.add(0, v.getId(), 0, "Cut");
+		     menu.add(0, v.getId(), 0, "Copy");
+		     
+		     if(method.equals("OAuth2")){
+		    	 menu.add(0,v.getId(),0,"View online");
+		    	 menu.add(0, v.getId(), 0, "Send to Trash");
+		     }
+		     if(service_id==R.string.google || service_id==R.string.box || method.equals("WebDAV")){
+		    	 menu.add(0, v.getId(), 0, "Delete permanently");
+		     }
 	     }
 	 }  
 	 public boolean onContextItemSelected(MenuItem item) { 
 	    	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
 	        if(item.getTitle()=="Details"){viewDetails(info.position);} 
-	        if(item.getTitle()=="Download"){downloadItem(info.position);} 
+	        if(item.getTitle()=="Download"){downloadItem(info.position);}
+	        if(item.getTitle()=="Download items"){downloadItems(null);}
 	        if(item.getTitle()=="Rename"){renameItem(info.position);}
 	        if(item.getTitle()=="Cut"){storeItem(info.position, "move");}
+	        if(item.getTitle()=="Cut items"){storeItems("move");}
 	        if(item.getTitle()=="Copy"){storeItem(info.position,"copy");}
+	        if(item.getTitle()=="Copy items"){storeItems("copy");}
 	        if(item.getTitle()=="View online"){viewItem(info.position);}
 	        if(item.getTitle()=="Delete permanently"){deleteItem(info.position,true);}  
-	        if(item.getTitle()=="Send to Trash"){deleteItem(info.position,false);}  
+	        if(item.getTitle()=="Delete items permanently"){deleteItems(true);}
+	        if(item.getTitle()=="Send to Trash"){deleteItem(info.position,false);}
+	        if(item.getTitle()=="Send items to Trash"){deleteItems(false);}
 	        return true;  
-	    }  
-	 
+	}  
+	 public void trashItems(View v){
+		 if(current_id.equals("#trash")){
+			 deleteItems(true);
+		 }else{
+			 deleteItems(false);
+		 }
+	 }
+	 public void cutItems(View v){
+		 storeItems("move");
+	 }
+	 public void copyItems(View v){
+		 storeItems("copy");
+	 }
+	 private void deleteItems(final boolean permanent) {
+		new AlertDialog.Builder(this)
+        .setTitle("Delete").setMessage("Are you sure you want to delete selected items?")
+        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) { 
+            	final ProgressDialog dialog2 = new ProgressDialog(ctx);
+            	Thread thr = new Thread(){
+            		public void run(){
+		            	for(int i=0; i<items.size(); i++){
+		            		
+				            Services.Item item = items.get(i);
+				            if(item.selected){
+				            	io.delete(item.isFolder,item.id,permanent);
+				            }
+		            	}
+		            	runOnUiThread(new Runnable(){
+		            		public void run(){
+		            			Toast.makeText(ctx,"Items deleted",2000).show();
+		            			showFiles(current_id, "List", null);
+		            			deselect(null);
+		            			dialog2.dismiss();
+		            		}
+		            	});
+		            	
+            		}
+            	};
+            	thr.start();
+            	dialog2.setMessage("Deleting items. Please wait...");
+            	dialog2.show();
+            	
+   		     } 
+         })
+        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {}})
+        .setIcon(android.R.drawable.ic_dialog_alert)
+         .show();
+	}
+	 public void storeItems(String op) {
+		int count = 0;
+		for(int i=0; i<items.size(); i++){
+			Services.Item item = items.get(i);
+			if(item.selected){
+				count++;
+				Editor edit = this.getSharedPreferences("com.x.cloudhub.clipboard"+"-"+count, Context.MODE_PRIVATE).edit();
+				edit.clear();
+				edit.putBoolean("isFolder",item.isFolder);
+				edit.putString("name", item.name);
+				edit.putString("id", item.id);
+				edit.putString("parent_id", current_id);
+				edit.putString("operation", op);
+				edit.putBoolean("hasNext", count!=getSelectedCount(items));
+				edit.apply();
+			}
+		}
+		deselect(null);
+		findViewById(R.id.paste).setVisibility(View.VISIBLE);
+	}
+	 public void downloadItems(View v) {
+		final Context ctx = this;
+		ProgressActivity.progress = new ProgressDialog(ctx);
+		 final int notify_id = utils.genRandomNum(10000);
+		 
+		 final int num = getSelectedCount(items);
+ 		
+	       final Thread mThread = new Thread() {
+			    @Override
+			    public void run() {
+			    		for(int i=0; i<items.size(); i++){
+				    		final Services.Item item =  items.get(i);				    		
+				    		if(item.selected){
+				    			final int index = i;
+				    			runOnUiThread(new Runnable(){
+				    				public void run(){
+				    					ProgressActivity.progress.setMessage("Downloading "+items.get(index)+". Please wait...");
+						    		    ProgressActivity.progress.setMax(0);		
+						    		    io.getTotalSize(item.isFolder, item.id, Integer.parseInt(item.size));
+				    				}
+				    			});
+				    			
+					    		 File file = io.download(item.isFolder,item.id, item.name,Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),notify_id);	 
+						    	SQLiteDatabase myDB = ctx.openOrCreateDatabase("services.db", MODE_PRIVATE, null);
+						    	myDB.execSQL("CREATE TABLE IF NOT EXISTS DOWNLOADS (FILE_NAME TEXT,PATH TEXT,SERVICE_NAME TEXT)");
+						    	ContentValues values = new ContentValues();
+						    		values.put("FILE_NAME", file.getName());
+						    		values.put("PATH", Uri.fromFile(file.getParentFile()).toString()+"/");
+						    		values.put("SERVICE_NAME", name);
+						    	myDB.insert("DOWNLOADS",null,values);
+						    	myDB.close();	
+					    	}
+			    		}
+			    		runOnUiThread(new Runnable(){
+			    			public void run(){
+			    			deselect(null);
+			    			}
+			    		});
+			    		 FileAccessActivity.mNotifyManager.cancel(notify_id);
+				    	String title ="Downloaded "+num+" items"; 
+				    	 Notification download_done=new Notification(android.R.drawable.stat_sys_download_done, title, System.currentTimeMillis());
+				    	download_done.setLatestEventInfo(ctx, title,"",
+				    			PendingIntent.getActivity(ctx, 0, new Intent(ctx, DownloadsActivity.class).putExtra("a", "downloads"),PendingIntent.FLAG_UPDATE_CURRENT));
+				    	download_done.flags |= Notification.FLAG_AUTO_CANCEL; 
+				    	FileAccessActivity.mNotifyManager.notify(title, 0, download_done);		
+				    	
+				    	ProgressActivity.progress.dismiss();
+			    }
+	       };
+	       mThread.start(); 
+	       
+	       ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
+		 	        @Override
+		 	        public void onClick(DialogInterface dialog, int which) {ProgressActivity.progress.dismiss();}
+		 	    });
+	       String title = "Downloading "+num+" items";
+	       if(num==1){
+	    	  title = "Downloading "+items.get(0).name;
+			}
+	       ProgressActivity.progress.setTitle(title);
+	       ProgressActivity.progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+	       
+			 FileAccessActivity.mNotifyManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
+			 FileAccessActivity.notification=new Notification(android.R.drawable.stat_sys_download, title, System.currentTimeMillis());
+			 FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
+			 FileAccessActivity.notification.setLatestEventInfo(ctx, title, "", 
+			 PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
+			 FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
+	}
 	 private void viewItem(int position) {
 		String content = children.get(position);
 		String edit_url = utils.getProperty(method, content, "alternateLink");
@@ -320,14 +475,16 @@ public class FileAccessActivity extends Activity{
 	 }
 	 private void storeItem(int position, String op) {
 		Services.Item item = items.get(position);
-		Editor edit = this.getSharedPreferences("com.x.cloudhub.clipboard", Context.MODE_PRIVATE).edit();
+		Editor edit = this.getSharedPreferences("com.x.cloudhub.clipboard-1", Context.MODE_PRIVATE).edit();
 		edit.clear();
 		edit.putBoolean("isFolder",item.isFolder);
 		edit.putString("name", item.name);
 		edit.putString("id", item.id);
 		edit.putString("parent_id", current_id);
 		edit.putString("operation", op);
+		edit.putBoolean("hasNext", false);
 		edit.apply();
+		deselect(null);
 		findViewById(R.id.paste).setVisibility(View.VISIBLE);
 	}
 	 public void renameItem(final int position){
@@ -757,74 +914,90 @@ public class FileAccessActivity extends Activity{
 	 }
 
 	 public void paste(View v){
-		SharedPreferences sprefs =  this.getSharedPreferences("com.x.cloudhub.clipboard", Context.MODE_PRIVATE);
-		 final boolean isFolder = sprefs.getBoolean("isFolder",false);
-		 final String id = sprefs.getString("id", "");
-		 final String parent_id = sprefs.getString("parent_id", "");
-		 final String item_name = sprefs.getString("name", "");
-		 final String op = sprefs.getString("operation","");
-		 String action = "";
-		if(op.equals("move")){action = "Moving"; }
-		
-		if(op.equals("copy")){action= "Copying"; ProgressActivity.progress=new ProgressDialog(this);}
-		final ProgressDialog dialog = ProgressDialog.show(ctx, "", action+". Please wait...", true);
-		if(isFolder && op.equals("copy")){
-			ProgressActivity.progress=new ProgressDialog(this);
-			ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
+		 boolean hasNext = true;
+		 int count = 0;
+		 final int notify_id = utils.genRandomNum(10000);
+		 final ArrayList <String> ids = new ArrayList<String>();
+		 final ArrayList <Boolean> isFolders = new ArrayList<Boolean>();
+		 final ArrayList <String> parentIds = new ArrayList<String>();
+		 final ArrayList <String> item_names = new ArrayList<String>();
+		 final ArrayList <String> ops = new ArrayList<String>();
+		 ProgressActivity.progress=new ProgressDialog(ctx);
+		 
+		 ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
 	 	        @Override
 	 	        public void onClick(DialogInterface dialog, int which) {ProgressActivity.progress.dismiss();}
 	 	    });
-			ProgressActivity.progress.setTitle("Copying "+item_name+". Please wait...");
-			ProgressActivity.progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-			ProgressActivity.progress.setMessage("Getting number of files");
-			ProgressActivity.progress.setMax(0);
-			ProgressActivity.progress.setIndeterminate(true);
-			
-		 
-			FileAccessActivity.mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-			FileAccessActivity.notification=new Notification(android.R.drawable.ic_menu_save, "Copying "+item_name, System.currentTimeMillis());
-			FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
-			FileAccessActivity.notification.setLatestEventInfo(ctx, "Copying "+item_name+"...", "", 
-			PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
-			FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
-			dialog.dismiss();
-		}
-	
-		 Thread mThread = new Thread() {
-			    @Override
-			    public void run() {
-		 if(op.equals("move")){
-			  io.move(isFolder, id, item_name,parent_id,current_id);
-		 }else if(op.equals("copy")){
-			 if(isFolder){
-				 ProgressActivity.progress.setMax(0);
-				 io.getNumOfFiles(isFolder, id);
-			 }
-			 ProgressActivity.progress.setIndeterminate(false);
-			  io.copy(isFolder, id, item_name, current_id);
-			  ProgressActivity.progress.dismiss();
-		      FileAccessActivity.mNotifyManager.cancel(notify_id);
-		      String title ="Copied "+item_name; 
-		    	Notification copy_done=new Notification(android.R.drawable.ic_menu_save, title, System.currentTimeMillis());
-		    	copy_done.setLatestEventInfo(ctx, title,"",
-		    	PendingIntent.getActivity(ctx, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
-		    	copy_done.flags |= Notification.FLAG_AUTO_CANCEL; 
-		    	
-		    	FileAccessActivity.mNotifyManager.notify(title, 0, copy_done);
-				 ProgressActivity.progress.dismiss();
-		 }
-		 
-		 runOnUiThread(new Runnable(){public void run(){
-			 dialog.dismiss();
-			 showFiles(current_id,"List", null);}});
-		}
-		};
-		mThread.start();
+		 ProgressActivity.progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 		
-		 item_adapter.notifyDataSetChanged();
-		 sprefs.edit().clear();
-		 findViewById(R.id.paste).setVisibility(View.INVISIBLE);
-	 }
+		 while(hasNext){
+			 count++;
+			 SharedPreferences sprefs =  this.getSharedPreferences("com.x.cloudhub.clipboard-"+count, Context.MODE_PRIVATE);
+			 isFolders.add(sprefs.getBoolean("isFolder",false));
+			 ids.add(sprefs.getString("id", ""));
+			 parentIds.add(sprefs.getString("parent_id", ""));
+			 item_names.add(sprefs.getString("name", ""));
+			 ops.add(sprefs.getString("operation",""));
+			 hasNext = sprefs.getBoolean("hasNext", false);
+			 sprefs.edit().clear();
+		 }
+		 String title = "Pasting "+count+" items";
+		 if(count==1){title = "Pasting item";}
+		 final String title2 = title.replace("Pasting", "Pasted");
+		 ProgressActivity.progress.setTitle(title);
+		 ProgressActivity.progress.setMessage("Getting files...");
+		 ProgressActivity.progress.setMax(count);
+			 Thread mThread = new Thread() {
+				    @Override
+				    public void run() {
+				    	for(int i=0; i<ids.size(); i++){
+				    		final String op = ops.get(i);
+				    		final boolean isFolder = isFolders.get(i);
+				    		final String id = ids.get(i);
+				    		final String item_name = item_names.get(i);
+				    		final String parent_id = parentIds.get(i);
+				    		
+							 String action = "";
+							if(op.equals("move")){action = "Moving";}
+							else if(op.equals("copy")){action= "Copying";}
+							final String action2 = action;
+							final int index = i;
+							runOnUiThread(new Runnable(){public void run(){
+								ProgressActivity.progress.setTitle(action2+" "+item_names.get(index)+". Please wait...");
+							}});
+							 if(op.equals("move")){
+								  io.move(isFolder, id, item_name,parent_id,current_id);
+							 }else if(op.equals("copy")){
+								 io.copy(isFolder, id, item_name, current_id);
+							 }
+							 runOnUiThread(new Runnable(){public void run(){
+								 ProgressActivity.progress.incrementProgressBy(1);
+							 }});
+				    	}
+			 runOnUiThread(new Runnable(){public void run(){
+				 ProgressActivity.progress.dismiss();
+			      FileAccessActivity.mNotifyManager.cancel(notify_id); 
+			      Notification copy_done=new Notification(android.R.drawable.ic_menu_save, title2, System.currentTimeMillis());
+			      		copy_done.setLatestEventInfo(ctx, title2,"",
+			    	PendingIntent.getActivity(ctx, 0, new Intent(),PendingIntent.FLAG_UPDATE_CURRENT));
+			    	copy_done.flags |= Notification.FLAG_AUTO_CANCEL; 
+			    	
+			    	FileAccessActivity.mNotifyManager.notify(title2, 0, copy_done);
+			    	showFiles(current_id,"List", null);
+			    	findViewById(R.id.paste).setVisibility(View.INVISIBLE);
+				 }});
+			}
+			};
+			mThread.start();
+			FileAccessActivity.mNotifyManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+			 FileAccessActivity.notification=new Notification(android.R.drawable.ic_menu_save, title, System.currentTimeMillis());
+			 FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
+			 FileAccessActivity.notification.setLatestEventInfo(ctx, title, "", PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
+			 FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
+			ProgressActivity.progress.show();
+			
+			 
+		 }
 	 public void upload(View v){
 		 	notify_id = utils.genRandomNum(10000); 
 			SharedPreferences sprefs = this.getSharedPreferences("com.x.cloudhub.upload", Context.MODE_PRIVATE);
@@ -889,11 +1062,12 @@ public class FileAccessActivity extends Activity{
 	 public void onBackPressed() {
 		 startActivity(new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NO_HISTORY)); finish(); 
 	 }
-	 public boolean anySelected(ArrayList<Services.Item> items){
+	 public int getSelectedCount(ArrayList<Services.Item> items){
+		 int i=0;
 		 for(Services.Item item:items){
-			 if(item.selected) return true;
+			 if(item.selected) i++;
 		 }
-		 return false;
+		 return i;
 	 }
 	 @Override
 	 public void onActivityResult(int requestCode, int resultCode, Intent data){
@@ -948,6 +1122,3 @@ public class FileAccessActivity extends Activity{
 	 		upload(null);
 	}
 }
-/*
-Empty google trash: 	DELETE  /files/trash	
- */

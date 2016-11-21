@@ -50,10 +50,10 @@ public class DownloadsActivity extends Activity{
 		    public View getView(int position, View convertView, ViewGroup parent) {
 		    	Download download = getItem(position);    
 		       if (convertView == null) {convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_items_view, parent, false);}
-		       TextView txtName = (TextView) convertView.findViewById(R.id.name);
-		       TextView txtId = (TextView) convertView.findViewById(R.id.id);
-		       TextView txtQuota = (TextView) convertView.findViewById(R.id.quota);
-		       ImageView service = (ImageView) convertView.findViewById(R.id.service);
+		       TextView txtName = (TextView) convertView.findViewById(R.id.item_name);
+		       TextView txtId = (TextView) convertView.findViewById(R.id.item_type);
+		       TextView txtQuota = (TextView) convertView.findViewById(R.id.item_quota);
+		       ImageView service = (ImageView) convertView.findViewById(R.id.icon);
 		       txtName.setText(download.name);txtId.setText(download.path); txtQuota.setText(download.service_name);
 		       int drawable_id = R.drawable.filetype_unknown;
 		       if(download.isFolder){drawable_id = R.drawable.folder;}

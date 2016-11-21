@@ -893,7 +893,7 @@ public class Services extends Activity{
 				 }
 	        		  } catch (Exception e) {e.printStackTrace();}
 	        		  if(cont){
-	        			  	String content = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str)).getContent();
+	        			  new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str));
 	        		  }
 	        	  }
 
@@ -904,7 +904,6 @@ public class Services extends Activity{
 	         		 headers.add("Destination: "+ destination);
 	         		 new HTTPRequest("COPY",origin, headers,new byte[0]);
 	  	  		}	
-	        	 ProgressActivity.progress.incrementProgressBy(1);
 	  		
 			}
 		
@@ -1109,7 +1108,7 @@ public class Services extends Activity{
 			 }
         		  } catch (Exception e) {e.printStackTrace();}
         		  if(cont){
-        			  String stat = new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str)).getContent();
+        			 new HTTPRequest(HTTPVerb, site+path, headers, utils.strToBytes(json_str));
 				  }
         	  }
 
