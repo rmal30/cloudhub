@@ -160,7 +160,10 @@ public class FileAccessActivity extends Activity{
 			        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 			            public void onClick(DialogInterface dialog, int which){}})
 			        .setNegativeButton("Download File", new DialogInterface.OnClickListener() {
-			            public void onClick(DialogInterface dialog, int which){downloadItem(position);}})
+			            public void onClick(DialogInterface dialog, int which){
+			            	items.get(position).selected=true;
+			            	item_adapter.notifyDataSetChanged();
+			            	downloadItems(null);}})
 			        .setIcon(android.R.drawable.ic_dialog_info)
 			        .show();
 			 }
@@ -265,7 +268,8 @@ public class FileAccessActivity extends Activity{
 	 public void copyItems(View v){
 		 storeItems("copy");
 	 }
-	 private void deleteItems(final boolean permanent) {
+	 
+	 public void deleteItems(final boolean permanent) {
 		new AlertDialog.Builder(this)
         .setTitle("Delete").setMessage("Are you sure you want to delete selected items?")
         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
@@ -273,8 +277,7 @@ public class FileAccessActivity extends Activity{
             	final ProgressDialog dialog2 = new ProgressDialog(ctx);
             	Thread thr = new Thread(){
             		public void run(){
-		            	for(int i=0; i<items.size(); i++){
-		            		
+		            	for(int i=0; i<items.size(); i++){            		
 				            Services.Item item = items.get(i);
 				            if(item.selected){
 				            	io.delete(item.isFolder,item.id,permanent);
@@ -391,7 +394,7 @@ public class FileAccessActivity extends Activity{
 			 PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
 			 FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
 	}
-	 private void viewItem(int position) {
+	 public void viewItem(int position) {
 		String content = children.get(position);
 		String edit_url = utils.getProperty(method, content, "alternateLink");
 		AlertDialog.Builder alert = new AlertDialog.Builder(this);
@@ -415,57 +418,6 @@ public class FileAccessActivity extends Activity{
 		alert.setView(wv1);
 		alert.show();
 	}
-	 private void downloadItem(int position){
-		 final Context ctx = this;
-		 final Services.Item item =  items.get(position);
-		 final int notify_id = utils.genRandomNum(10000);
-		   ProgressActivity.progress = new ProgressDialog(ctx);
-	       final Thread mThread = new Thread() {
-			    @Override
-			    public void run() {
-			    		 File file = io.download(item.isFolder,item.id, item.name,Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),notify_id);
-			    		 FileAccessActivity.mNotifyManager.cancel(notify_id);
-				    	 String title ="Downloaded "+item.name; 
-				    	 Notification download_done=new Notification(android.R.drawable.stat_sys_download_done, title, System.currentTimeMillis());
-				    	Bundle download_params = new Bundle();
-							download_params.putString("file",file.getPath());
-							download_params.putString("a", "downloads");
-				    	download_done.setLatestEventInfo(ctx, title,"",
-				    	PendingIntent.getActivity(ctx, 0, new Intent(ctx, DownloadsActivity.class).putExtras(download_params),PendingIntent.FLAG_UPDATE_CURRENT));
-				    	download_done.flags |= Notification.FLAG_AUTO_CANCEL; 
-				   
-				    	FileAccessActivity.mNotifyManager.notify(title, 0, download_done);		
-				    	
-				    	SQLiteDatabase myDB = ctx.openOrCreateDatabase("services.db", MODE_PRIVATE, null);
-				    	myDB.execSQL("CREATE TABLE IF NOT EXISTS DOWNLOADS (FILE_NAME TEXT,PATH TEXT,SERVICE_NAME TEXT)");
-				    	ContentValues values = new ContentValues();
-				    		values.put("FILE_NAME", file.getName());
-				    		values.put("PATH", Uri.fromFile(file.getParentFile()).toString()+"/");
-				    		values.put("SERVICE_NAME", name);
-				    	myDB.insert("DOWNLOADS",null,values);
-				    	myDB.close();
-				    	ProgressActivity.progress.dismiss();
-			    }
-	       };
-	       mThread.start(); 
-	       ProgressActivity.progress.setButton(ProgressDialog.BUTTON_POSITIVE, "Do in background", new DialogInterface.OnClickListener() {
-		 	        @Override
-		 	        public void onClick(DialogInterface dialog, int which) {ProgressActivity.progress.dismiss();}
-		 	    });
-	       ProgressActivity.progress.setTitle("Downloading "+item.name+". Please wait...");
-	       ProgressActivity.progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-	       ProgressActivity.progress.setMax(0);
-			 if(item.isFolder){ProgressActivity.progress.setMessage("Getting total size");}
-			 ProgressActivity.progress.setIndeterminate(true);
-			 FileAccessActivity.mNotifyManager = (NotificationManager) ctx.getSystemService(NOTIFICATION_SERVICE);
-			 FileAccessActivity.notification=new Notification(android.R.drawable.stat_sys_download, "Downloading "+item.name, System.currentTimeMillis());
-			 FileAccessActivity.notification.flags = FileAccessActivity.notification.flags | Notification.FLAG_ONGOING_EVENT;
-			 FileAccessActivity.notification.setLatestEventInfo(ctx, "Downloading "+item.name, "", 
-			 PendingIntent.getActivity(ctx, utils.genRandomNum(100000),new Intent(ctx,ProgressActivity.class),Intent.FLAG_ACTIVITY_CLEAR_TOP));
-			 FileAccessActivity.mNotifyManager.notify(notify_id,FileAccessActivity.notification);
-		   io.getTotalSize(item.isFolder, item.id, Integer.parseInt(item.size));
-		   ProgressActivity.progress.setIndeterminate(false);
-	 }
 	 public void renameItem(final int position){
 	    	final Services.Item item = items.get(position);
 	        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -500,6 +452,7 @@ public class FileAccessActivity extends Activity{
 	        .setIcon(android.R.drawable.ic_dialog_info)
 	        .show();
 	     }  
+	 
 	 public boolean onCreateOptionsMenu(Menu menu) {
 	        getMenuInflater().inflate(R.menu.access, menu);
 	        return true;
