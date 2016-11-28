@@ -238,17 +238,17 @@ public class FileAccessActivity extends Activity{
 	 public boolean onContextItemSelected(MenuItem item) { 
 	    	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
 	        if(item.getTitle()=="Details"){viewDetails(info.position);} 
-	        if(item.getTitle()=="Download"){downloadItem(info.position);}
+	        if(item.getTitle()=="Download"){downloadItems(null);}
 	        if(item.getTitle()=="Download items"){downloadItems(null);}
 	        if(item.getTitle()=="Rename"){renameItem(info.position);}
-	        if(item.getTitle()=="Cut"){storeItem(info.position, "move");}
+	        if(item.getTitle()=="Cut"){storeItems("move");}
 	        if(item.getTitle()=="Cut items"){storeItems("move");}
-	        if(item.getTitle()=="Copy"){storeItem(info.position,"copy");}
+	        if(item.getTitle()=="Copy"){storeItems("copy");}
 	        if(item.getTitle()=="Copy items"){storeItems("copy");}
 	        if(item.getTitle()=="View online"){viewItem(info.position);}
-	        if(item.getTitle()=="Delete permanently"){deleteItem(info.position,true);}  
+	        if(item.getTitle()=="Delete permanently"){deleteItems(true);}  
 	        if(item.getTitle()=="Delete items permanently"){deleteItems(true);}
-	        if(item.getTitle()=="Send to Trash"){deleteItem(info.position,false);}
+	        if(item.getTitle()=="Send to Trash"){deleteItems(false);}
 	        if(item.getTitle()=="Send items to Trash"){deleteItems(false);}
 	        return true;  
 	}  
@@ -466,20 +466,6 @@ public class FileAccessActivity extends Activity{
 		   io.getTotalSize(item.isFolder, item.id, Integer.parseInt(item.size));
 		   ProgressActivity.progress.setIndeterminate(false);
 	 }
-	 private void storeItem(int position, String op) {
-		Services.Item item = items.get(position);
-		Editor edit = this.getSharedPreferences("com.x.cloudhub.clipboard-1", Context.MODE_PRIVATE).edit();
-		edit.clear();
-		edit.putBoolean("isFolder",item.isFolder);
-		edit.putString("name", item.name);
-		edit.putString("id", item.id);
-		edit.putString("parent_id", current_id);
-		edit.putString("operation", op);
-		edit.putBoolean("hasNext", false);
-		edit.apply();
-		deselect(null);
-		findViewById(R.id.paste).setVisibility(View.VISIBLE);
-	}
 	 public void renameItem(final int position){
 	    	final Services.Item item = items.get(position);
 	        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -514,35 +500,6 @@ public class FileAccessActivity extends Activity{
 	        .setIcon(android.R.drawable.ic_dialog_info)
 	        .show();
 	     }  
-	 public void deleteItem(final int position, final boolean permanent){  
-	        new AlertDialog.Builder(this)
-	        .setTitle("Delete").setMessage("Are you sure you want to delete this item?")
-	        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-	            public void onClick(DialogInterface dialog, int which) { 
-	   		     Services.Item item= items.get(position);
-	   		     String status = io.delete(item.isFolder,item.id,permanent);
-	   		    String info;
-   		    	 if(status.contains("404")||status.contains("400")){
-   		    		info="Item could not be deleted. Please try again later";
-   		    	 }else{
-   		    		 info = "Item was successfully deleted";
-   		    		 items.remove(position);
-   		    		 item_adapter.notifyDataSetChanged();
-   		    	 }
-   		    	new AlertDialog.Builder(ctx)
-		        .setTitle("Status").setMessage(info)
-		        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {public void onClick(DialogInterface dialog, int which){}})
-		        .setIcon(android.R.drawable.ic_dialog_info)
-		        .show();
-	   		     } 
-	         })
-	        .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-	            public void onClick(DialogInterface dialog, int which) {}})
-	        .setIcon(android.R.drawable.ic_dialog_alert)
-	         .show();
-	        
-	    }
-
 	 public boolean onCreateOptionsMenu(Menu menu) {
 	        getMenuInflater().inflate(R.menu.access, menu);
 	        return true;
