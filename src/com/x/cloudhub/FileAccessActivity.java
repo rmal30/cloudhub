@@ -16,7 +16,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
@@ -55,11 +54,10 @@ public class FileAccessActivity extends Activity{
 	 int notify_id;
   	 int service_id; String name,credentials,baseurl="",method="",email; 
 	 Stack<String> previousIds; Socket ftp_socket; String current_id; Context ctx = FileAccessActivity.this;
-	 static Long expires; ArrayList<Services.Item> items;static ItemAdapter item_adapter;TextView URLText;
+	 static Long expires; ArrayList<Services.Item> items;static ItemAdapter item_adapter;
 	 Bundle extras; Services.Service service; Services.FileIO io;Services.FTPSocket ftpsock;
 	 ArrayList<String> children;
 	 static Notification notification; static NotificationManager mNotifyManager;
-	 IntentFilter filter = new IntentFilter();
 	 public class ItemAdapter extends BaseAdapter {
 		private ArrayList<Services.Item> internal_items;
 		public int internal_view;
@@ -133,7 +131,6 @@ public class FileAccessActivity extends Activity{
 			 final GridView curitems2 = (GridView) findViewById(R.id.curitems2);
 			 registerForContextMenu(curitems);
 			 registerForContextMenu(curitems2);
-			  URLText = (TextView) findViewById(R.id.URLText);
 			  setTitle(name);
 			  service = s.new Service(method, service_id); io = s.new FileIO(method, service_id, baseurl, credentials);  
 	        curitems.setOnItemClickListener(new AdapterView.OnItemClickListener() { 
@@ -168,7 +165,6 @@ public class FileAccessActivity extends Activity{
 			        .show();
 			 }
 	}
-
 	 public void deselect(View view){
 		 for(int i=0; i<items.size(); i++){
 			 items.get(i).selected = false;
@@ -177,10 +173,8 @@ public class FileAccessActivity extends Activity{
 		 findViewById(R.id.default1).setVisibility(View.VISIBLE);
 		 item_adapter.notifyDataSetChanged();
 	 }
- 
 	 public void showFiles(final String dir_id, final String op,final String[] params){
 		 items.clear();
-		 URLText.setText(service.getListUrl(baseurl, dir_id));
 		 findViewById(R.id.linearLayout4).setVisibility(View.VISIBLE);
 		 findViewById(R.id.back).setVisibility(View.GONE);
 		 Thread t = new Thread(){
@@ -207,7 +201,6 @@ public class FileAccessActivity extends Activity{
 		 };
 		 t.start(); 
 	 }
-	 
 	 public void onCreateContextMenu(ContextMenu menu, View v,ContextMenuInfo menuInfo) {  
     	super.onCreateContextMenu(menu, v, menuInfo);  
     	AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
